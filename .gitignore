@@ -1,8 +1,6 @@
 */TriCore Debug (TASKING)/*
-# language.settings.xml
-.metadata/*
-.vscode/*
-*.prefs
+*/.metadata/*
+*/.vscode/*
 *.o
 *.elf
 *.list
@@ -12,6 +10,7 @@
 *.mk
 *.launch
 */CCL_Reports/*
+*/.ads/*
 # */makefile # include this if it appears outside /TriCore Debug/
 # ignore all folders/files starting with test and temp
 test*
