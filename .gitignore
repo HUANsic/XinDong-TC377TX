@@ -11,7 +11,6 @@
 *.su
 *.mk
 *.launch
-*/.ads/*
 */CCL_Reports/*
 # */makefile # include this if it appears outside /TriCore Debug/
 # ignore all folders/files starting with test and temp
