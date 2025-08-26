@@ -869,20 +869,20 @@ static uint8 _atk_mc2640_reg_bank_select(atk_mc2640_reg_bank_t bank)
  */
 static void _atk_mc2640_hw_init(void)
 {
-    IfxPort_setPinMode(CAM_VSYNC_HW_PORT, CAM_VSYNC_HW_PIN, IfxPort_Mode_inputNoPullDevice);
-    IfxPort_setPinMode(CAM_HSYNC_HW_PORT, CAM_HSYNC_HW_PIN, IfxPort_Mode_inputNoPullDevice);
-    IfxPort_setPinMode(CAM_PCLK_HW_PORT, CAM_PCLK_HW_PIN, IfxPort_Mode_inputNoPullDevice);
-    IfxPort_setPinMode(CAM_VSYNC_SW_PORT, CAM_VSYNC_SW_PIN, IfxPort_Mode_inputNoPullDevice);
-    IfxPort_setPinMode(CAM_HSYNC_SW_PORT, CAM_HSYNC_SW_PIN, IfxPort_Mode_inputNoPullDevice);
-    IfxPort_setPinMode(CAM_PCLK_SW_PORT, CAM_PCLK_SW_PIN, IfxPort_Mode_inputNoPullDevice);
-    IfxPort_setPinMode(CAM_D0_PORT, CAM_D0_PIN, IfxPort_Mode_inputNoPullDevice);
-    IfxPort_setPinMode(CAM_D1_PORT, CAM_D1_PIN, IfxPort_Mode_inputNoPullDevice);
-    IfxPort_setPinMode(CAM_D2_PORT, CAM_D2_PIN, IfxPort_Mode_inputNoPullDevice);
-    IfxPort_setPinMode(CAM_D3_PORT, CAM_D3_PIN, IfxPort_Mode_inputNoPullDevice);
-    IfxPort_setPinMode(CAM_D4_PORT, CAM_D4_PIN, IfxPort_Mode_inputNoPullDevice);
-    IfxPort_setPinMode(CAM_D5_PORT, CAM_D5_PIN, IfxPort_Mode_inputNoPullDevice);
-    IfxPort_setPinMode(CAM_D6_PORT, CAM_D6_PIN, IfxPort_Mode_inputNoPullDevice);
-    IfxPort_setPinMode(CAM_D7_PORT, CAM_D7_PIN, IfxPort_Mode_inputNoPullDevice);
+    IfxPort_setPinMode(CAM_VSYNC_HW_CIF_PIN.pin.port, CAM_VSYNC_HW_CIF_PIN.pin.pinIndex, IfxPort_Mode_inputNoPullDevice);
+    IfxPort_setPinMode(CAM_HSYNC_HW_CIF_PIN.pin.port, CAM_HSYNC_HW_CIF_PIN.pin.pinIndex, IfxPort_Mode_inputNoPullDevice);
+    IfxPort_setPinMode(CAM_PCLK_HW_CIF_PIN.pin.port, CAM_PCLK_HW_CIF_PIN.pin.pinIndex, IfxPort_Mode_inputNoPullDevice);
+    IfxPort_setPinMode(CAM_VSYNC_SW_EXTI_PIN.pin.port, CAM_VSYNC_SW_EXTI_PIN.pin.pinIndex, IfxPort_Mode_inputNoPullDevice);
+    IfxPort_setPinMode(CAM_HSYNC_SW_EXTI_PIN.pin.port, CAM_HSYNC_SW_EXTI_PIN.pin.pinIndex, IfxPort_Mode_inputNoPullDevice);
+    IfxPort_setPinMode(CAM_PCLK_SW_EXTI_PIN.pin.port, CAM_PCLK_SW_EXTI_PIN.pin.pinIndex, IfxPort_Mode_inputNoPullDevice);
+    IfxPort_setPinMode(CAM_D0_CIF_PORT.pin.port, CAM_D0_CIF_PORT.pin.pinIndex, IfxPort_Mode_inputNoPullDevice);
+    IfxPort_setPinMode(CAM_D1_CIF_PORT.pin.port, CAM_D1_CIF_PORT.pin.pinIndex, IfxPort_Mode_inputNoPullDevice);
+    IfxPort_setPinMode(CAM_D2_CIF_PORT.pin.port, CAM_D2_CIF_PORT.pin.pinIndex, IfxPort_Mode_inputNoPullDevice);
+    IfxPort_setPinMode(CAM_D3_CIF_PORT.pin.port, CAM_D3_CIF_PORT.pin.pinIndex, IfxPort_Mode_inputNoPullDevice);
+    IfxPort_setPinMode(CAM_D4_CIF_PORT.pin.port, CAM_D4_CIF_PORT.pin.pinIndex, IfxPort_Mode_inputNoPullDevice);
+    IfxPort_setPinMode(CAM_D5_CIF_PORT.pin.port, CAM_D5_CIF_PORT.pin.pinIndex, IfxPort_Mode_inputNoPullDevice);
+    IfxPort_setPinMode(CAM_D6_CIF_PORT.pin.port, CAM_D6_CIF_PORT.pin.pinIndex, IfxPort_Mode_inputNoPullDevice);
+    IfxPort_setPinMode(CAM_D7_CIF_PORT.pin.port, CAM_D7_CIF_PORT.pin.pinIndex, IfxPort_Mode_inputNoPullDevice);
     IfxPort_setPinMode(CAM_RESET_PORT, CAM_RESET_PIN, IfxPort_Mode_outputPushPullGeneral);
     IfxPort_setPinMode(CAM_PWDN_PORT, CAM_PWDN_PIN, IfxPort_Mode_outputPushPullGeneral);
     IfxPort_setPinMode(CAM_FLASH_PORT, CAM_FLASH_PIN, IfxPort_Mode_outputPushPullGeneral);
@@ -1725,7 +1725,7 @@ void _atk_mc2640_colorbar_disable(void)
  * @retval      无
  */
 void IO_Vsync_ISR(void) {
-    if (IfxPort_getPinState(CAM_VSYNC_SW_PORT, CAM_VSYNC_SW_PIN) == 1) {
+    if (IfxPort_getPinState(CAM_VSYNC_SW_EXTI_PIN.pin.port, CAM_VSYNC_SW_EXTI_PIN.pin.pinIndex) == 1) {
         IfxDma_setChannelDestinationAddress(&MODULE_DMA, CAMERA_PCLK_PRIORITY,
         (void*) IFXCPU_GLB_ADDR_DSPR(IfxCpu_getCoreId(), writing_img_ptr));
     } else {
@@ -1741,7 +1741,7 @@ void IO_Vsync_ISR(void) {
  * @retval      无
  */
 void IO_Hsync_ISR(void) {
-    if (IfxPort_getPinState(CAM_HSYNC_SW_PORT, CAM_HSYNC_SW_PIN) == 1) {
+    if (IfxPort_getPinState(CAM_HSYNC_SW_EXTI_PIN.pin.port, CAM_HSYNC_SW_EXTI_PIN.pin.pinIndex) == 1) {
         IfxDma_enableChannelTransaction(&MODULE_DMA, CAMERA_PCLK_PRIORITY);
     } else {
         IfxDma_disableChannelTransaction(&MODULE_DMA, CAMERA_PCLK_PRIORITY);
@@ -1950,9 +1950,9 @@ uint8 Camera_Init(void) {
 
     IfxCpu_disableInterrupts();
 
-    _PIN_Exti(CAM_PCLK_SW_PORT, CAM_PCLK_SW_PIN, PIN_IRQ_MODE_RISING);
-    _PIN_Exti(CAM_VSYNC_SW_PORT, CAM_VSYNC_SW_PIN, PIN_IRQ_MODE_RISING_FALLING);
-    _PIN_Exti(CAM_HSYNC_SW_PORT, CAM_HSYNC_SW_PIN, PIN_IRQ_MODE_RISING_FALLING);
+    _PIN_Exti(CAM_PCLK_SW_EXTI_PIN.pin.port, CAM_PCLK_SW_EXTI_PIN.pin.pinIndex, PIN_IRQ_MODE_RISING);
+    _PIN_Exti(CAM_VSYNC_SW_EXTI_PIN.pin.port, CAM_VSYNC_SW_EXTI_PIN.pin.pinIndex, PIN_IRQ_MODE_RISING_FALLING);
+    _PIN_Exti(CAM_HSYNC_SW_EXTI_PIN.pin.port, CAM_HSYNC_SW_EXTI_PIN.pin.pinIndex, PIN_IRQ_MODE_RISING_FALLING);
 
     _DMA_CameraInitConfig((unsigned long) (&(MODULE_P02.IN.U)), (unsigned long) writing_img_ptr, CAMERA_PCLK_PRIORITY);
 
