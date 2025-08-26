@@ -32,8 +32,8 @@ void CV_PreprocessImage(uint16 (*input_img)[CV_IMAGE_HEIGHT][CV_IMAGE_WIDTH],
             if (x > half_win && right < CV_IMAGE_WIDTH) {
                 sum = sum - (*input_img)[y][left - 1] + (*input_img)[y][right];
             }
-            // 计算均值
-            mean = sum / (right - left + 1);
+            // 计算均值（显式转换以避免隐式截断告警）
+            mean = (uint16)(sum / (uint32)(right - left + 1));
             // 二值化
             if ((*input_img)[y][x] > mean) {
                 (*mask)[y][x] = 255;
@@ -179,8 +179,8 @@ CV_Result_t CV_ProcessImage(void) {
         // 进行中线检测
         result = CV_DetectMidline(img_ptr);
         
-        // 释放图像缓冲区 - 确保在任何情况下都释放
-        Camera_Release(img_ptr);
+        // 释放图像缓冲区 - 确保在任何情况下都释放（显式转换以避免不同类型指针告警）
+        Camera_Release((void*)img_ptr);
     } else {
         // 如果没有获取到图像缓冲区，返回无效结果
         result.valid = 0;
