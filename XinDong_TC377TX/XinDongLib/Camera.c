@@ -5,6 +5,7 @@
 #include "IfxDma_Dma.h"
 #include "IfxDma_reg.h"
 #include "IfxDma.h"
+#include "IfxCif_PinMap.h"
 #include "XinDongLib/Interrupts.h"
 
 // (DO NOT EXTERN!!!) the three image buffers to catch every single frame
