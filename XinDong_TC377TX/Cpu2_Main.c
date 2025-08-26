@@ -38,14 +38,10 @@
 #include "XinDongLib/Movements.h"
 #include "XinDongLib/Serial.h"
 #include "XinDongLib/Ultrasonic.h"
-#include "XinDongLib/Encoder.h"
 #include "XinDongLib/Time.h"
-
-#include "XinDongLib/IO.h"
 #include "XinDongLib/ADC.h"
+
 extern IfxCpu_syncEvent g_cpuSyncEvent;
-sint32 pos;
-float target_speed;
 
 void core2_main(void) {
     IfxCpu_enableInterrupts();
@@ -74,7 +70,6 @@ void core2_main(void) {
 	while (Intercore_ReadyToGo() == 0)
 		;
 
-	Bluetooth_AT(1);
 
 	while (1) {
 		// some code to indicate that the core is not dead
