@@ -8,16 +8,16 @@
 //void _EI2C_SCL_Fall(EI2C_Typedef *ei2c);
 //void _EI2C_SDA_High(EI2C_Typedef *ei2c);
 //void _EI2C_SDA_Low(EI2C_Typedef *ei2c);
-//boolean _EI2C_SDA_State(EI2C_Typedef *ei2c);
-//boolean _EI2C_SCL_State(EI2C_Typedef *ei2c);
+//uint8 _EI2C_SDA_State(EI2C_Typedef *ei2c);
+//uint8 _EI2C_SCL_State(EI2C_Typedef *ei2c);
 //void _EI2C_Hold(EI2C_Typedef *ei2c);
 //void _EI2C_Start(EI2C_Typedef *ei2c);
 //void _EI2C_Restart(EI2C_Typedef *ei2c);
 //void _EI2C_Stop(EI2C_Typedef *ei2c);
-//void _EI2C_SendBit(EI2C_Typedef *ei2c, boolean bit);
-//boolean _EI2C_ReadBit(EI2C_Typedef *ei2c);
-//boolean _EI2C_SendByte(EI2C_Typedef *ei2c, uint8 byte);
-//uint8 _EI2C_ReadByte(EI2C_Typedef *ei2c, boolean ack);
+//void _EI2C_SendBit(EI2C_Typedef *ei2c, uint8 bit);
+//uint8 _EI2C_ReadBit(EI2C_Typedef *ei2c);
+//uint8 _EI2C_SendByte(EI2C_Typedef *ei2c, uint8 byte);
+//uint8 _EI2C_ReadByte(EI2C_Typedef *ei2c, uint8 ack);
 inline void _EI2C_SCL_Rise(EI2C_Typedef *ei2c) {
 	IfxPort_setPinState(ei2c->scl_port, ei2c->scl_pin, IfxPort_State_high);
 }
@@ -34,11 +34,11 @@ inline void _EI2C_SDA_Low(EI2C_Typedef *ei2c) {
 	IfxPort_setPinState(ei2c->sda_port, ei2c->sda_pin, IfxPort_State_low);
 }
 
-inline boolean _EI2C_SDA_State(EI2C_Typedef *ei2c) {
+inline uint8 _EI2C_SDA_State(EI2C_Typedef *ei2c) {
 	return IfxPort_getPinState(ei2c->sda_port, ei2c->sda_pin);
 }
 
-inline boolean _EI2C_SCL_State(EI2C_Typedef *ei2c) {
+inline uint8 _EI2C_SCL_State(EI2C_Typedef *ei2c) {
 	return IfxPort_getPinState(ei2c->scl_port, ei2c->scl_pin);
 }
 
@@ -225,7 +225,7 @@ void _EI2C_Stop(EI2C_Typedef *ei2c) {
  *  SDA            |
  *          ___ ___|___ ___
  */
-void _EI2C_SendBit(EI2C_Typedef *ei2c, boolean bit) {
+void _EI2C_SendBit(EI2C_Typedef *ei2c, uint8 bit) {
 	_EI2C_Hold();
 	_EI2C_SCL_Fall(ei2c);
 	_EI2C_Hold();
@@ -248,8 +248,8 @@ void _EI2C_SendBit(EI2C_Typedef *ei2c, boolean bit) {
  *                     ^
  *                Sample Here
  */
-boolean _EI2C_ReadBit(EI2C_Typedef *ei2c) {
-	boolean bit;
+uint8 _EI2C_ReadBit(EI2C_Typedef *ei2c) {
+	uint8 bit;
 	_EI2C_Hold();
 	_EI2C_SCL_Fall(ei2c);
 	_EI2C_Hold();
@@ -268,7 +268,7 @@ boolean _EI2C_ReadBit(EI2C_Typedef *ei2c) {
  *  I2C     | T | T | T | T | T | T | T | T | R
  *          |___|___|___|___|___|___|___|___|___
  */
-boolean _EI2C_SendByte(EI2C_Typedef *ei2c, uint8 byte) {
+uint8 _EI2C_SendByte(EI2C_Typedef *ei2c, uint8 byte) {
 	uint8 i;
 	for (i = 0; i < 8; i++) {
 		_EI2C_SendBit(ei2c, byte & 0x80);
@@ -282,7 +282,7 @@ boolean _EI2C_SendByte(EI2C_Typedef *ei2c, uint8 byte) {
  *  I2C     | R | R | R | R | R | R | R | R | T
  *          |___|___|___|___|___|___|___|___|___
  */
-uint8 _EI2C_ReadByte(EI2C_Typedef *ei2c, boolean ack) {
+uint8 _EI2C_ReadByte(EI2C_Typedef *ei2c, uint8 ack) {
 	uint8 i, retVal = 0;
 	for (i = 0; i < 8; i++) {
 		retVal <<= 1;
@@ -310,15 +310,18 @@ void EI2C_Init(EI2C_Typedef *ei2c) {
 EI2C_Status EI2C_Mem_Read(EI2C_Typedef *ei2c, uint8 slaveAddress, uint8 MemAddress, uint8 *pData, uint16 size) {
 	_EI2C_Start(ei2c);
 	if (_EI2C_SendByte(ei2c, slaveAddress)) {
+		_EI2C_Stop(ei2c);
 		ei2c->status = EI2C_NO_DEVICE;
 		return EI2C_NO_DEVICE;       // no device
 	}
 	if (_EI2C_SendByte(ei2c, MemAddress)) {
+		_EI2C_Stop(ei2c);
 		ei2c->status = EI2C_INVALID_ADDRESS;
 		return EI2C_INVALID_ADDRESS;       // invalid address
 	}
 	_EI2C_Restart(ei2c);
 	if (_EI2C_SendByte(ei2c, slaveAddress | 1)) {
+		_EI2C_Stop(ei2c);
 		ei2c->status = EI2C_NO_DEVICE;
 		return EI2C_NO_DEVICE;       // no device
 	}
@@ -343,15 +346,18 @@ EI2C_Status EI2C_Mem_Read(EI2C_Typedef *ei2c, uint8 slaveAddress, uint8 MemAddre
 EI2C_Status EI2C_Mem_Write(EI2C_Typedef *ei2c, uint8 slaveAddress, uint8 MemAddress, uint8 *pData, uint16 size) {
 	_EI2C_Start(ei2c);
 	if (_EI2C_SendByte(ei2c, slaveAddress)) {
+		_EI2C_Stop(ei2c);
 		ei2c->status = EI2C_NO_DEVICE;
 		return EI2C_NO_DEVICE;       // no device
 	}
 	if (_EI2C_SendByte(ei2c, MemAddress)) {
+		_EI2C_Stop(ei2c);
 		ei2c->status = EI2C_INVALID_ADDRESS;
 		return EI2C_INVALID_ADDRESS;       // invalid address
 	}
 	while (size--) {
 		if (_EI2C_SendByte(ei2c, *pData)) {
+			_EI2C_Stop(ei2c);
 			ei2c->status = EI2C_ACK_MISSING;
 			return EI2C_ACK_MISSING;   // acknowledge missing
 		}
@@ -365,6 +371,7 @@ EI2C_Status EI2C_Mem_Write(EI2C_Typedef *ei2c, uint8 slaveAddress, uint8 MemAddr
 EI2C_Status EI2C_Call(EI2C_Typedef *ei2c, uint8 slaveAddress) {
 	_EI2C_Start(ei2c);
 	if (_EI2C_SendByte(ei2c, slaveAddress)) {
+		_EI2C_Stop(ei2c);
 		ei2c->status = EI2C_NO_DEVICE;
 		return EI2C_NO_DEVICE;       // no device
 	}

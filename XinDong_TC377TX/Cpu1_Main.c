@@ -34,8 +34,6 @@
 #include "XinDongLib/IO.h"
 #include "XinDongLib/Time.h"
 
-#include "XinDongLib/Time.h"
-#include "XinDongLib/IO.h"
 extern IfxCpu_syncEvent g_cpuSyncEvent;
 
 void core1_main(void) {
@@ -54,6 +52,7 @@ void core1_main(void) {
 		;
 
 	// initialize camera module
+
 
 	// wait for other cores to finish initialization
 	Intercore_CPU1_Ready();

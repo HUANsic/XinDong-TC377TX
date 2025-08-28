@@ -34,9 +34,6 @@
 #include "XinDongLib/Time.h"
 #include "XinDongLib/IO.h"
 
-#include "XinDongLib/Time.h"
-#include "XinDongLib/IO.h"
-
 IFX_ALIGN(4) IfxCpu_syncEvent g_cpuSyncEvent = 0;
 
 void core0_main(void) {
@@ -54,8 +51,6 @@ void core0_main(void) {
 	// initialize timer
 	Time_Start();
 	Interrupts_Init();
-
-	// initialize LEDs and DIP switches, and the input for detecting battery balancing connector
 	IO_Init();
 
 	// if battery balancing connector not connected
