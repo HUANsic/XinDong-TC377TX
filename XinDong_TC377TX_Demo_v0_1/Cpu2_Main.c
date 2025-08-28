@@ -79,8 +79,8 @@ void core2_main(void) {
 
     IfxPort_setPinState(IO_LED1_PORT, IO_LED1_PIN, IfxPort_State_low);
 //    double accel_x, accel_y, accel_z;
-//    double omega_x, omega_y, omega_z;
-//    double theta_x, theta_y, theta_z;
+    double omega_x, omega_y, omega_z;
+    double theta_x, theta_y, theta_z;
 //
 //
 //    MPU6050_Read_Accel();
@@ -101,20 +101,20 @@ void core2_main(void) {
 //        OLED_Printf(5,25,6,"%f",accel_y);
 //        OLED_Printf(5,35,6,"%f",accel_z);
 //
-//        MPU6050_Read_Gyro();
-//        MPU6050_Get_Omega(&omega_x,&omega_y,&omega_z);
-//        OLED_Printf(65,15,6,"%f",omega_x);
-//        OLED_Printf(65,25,6,"%f",omega_y);
-//        OLED_Printf(65,35,6,"%f",omega_z);
-//
-//        MPU6050_Read_Theta();
-//        MPU6050_Get_Theta(&theta_x, &theta_y,&theta_z);
-//        OLED_Printf(5,45,6,"%06.3f",theta_x);
-//        OLED_Printf(5,55,6,"%06.3f",theta_y);
-//        OLED_Printf(65,45,6,"%06.3f",theta_z);
+        MPU6050_Read_Gyro();
+        MPU6050_Get_Omega(&omega_x,&omega_y,&omega_z);
+        OLED_Printf(65,15,6,"%f",omega_x);
+        OLED_Printf(65,25,6,"%f",omega_y);
+        OLED_Printf(65,35,6,"%f",omega_z);
+
+        MPU6050_Read_Theta();
+        MPU6050_Get_Theta(&theta_x, &theta_y,&theta_z);
+        OLED_Printf(5,45,6,"%06.3f",theta_x);
+        OLED_Printf(5,55,6,"%06.3f",theta_y);
+        OLED_Printf(65,45,6,"%06.3f",theta_z);
 
         Time_Delay_us(10000);
-//        OLED_Update();
+        OLED_Update();
         IfxPort_togglePin(IO_LED1_PORT, IO_LED1_PIN);
     }
 }
