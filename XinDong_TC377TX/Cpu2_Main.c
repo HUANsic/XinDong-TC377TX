@@ -65,12 +65,15 @@ void core2_main(void) {
 	Servo_Init();
 	Motor_Init();
 	PID_Init(0.1, 0.0, 0.0);
+	OLED_Init();
+	MPU6050_Init();
+
 	// wait for other cores to finish initialization
 	Intercore_CPU2_Ready();
 	while (Intercore_ReadyToGo() == 0)
 		;
 
-
+	// main loop
 	while (1) {
 		// some code to indicate that the core is not dead
 		IO_LED_Toggle(3);

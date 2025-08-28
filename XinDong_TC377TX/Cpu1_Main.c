@@ -52,13 +52,14 @@ void core1_main(void) {
 		;
 
 	// initialize camera module
-
+	Camera_Init();
 
 	// wait for other cores to finish initialization
 	Intercore_CPU1_Ready();
 	while (Intercore_ReadyToGo() == 0)
 		;
 
+	// main loop
 	while (1) {
 		// some code to indicate that the core is not dead
 		IO_LED_Toggle(2);
