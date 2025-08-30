@@ -23,6 +23,8 @@ void* Camera_GetLatest(void) {
     if (occupied_img_ptr != 0)
         return 0;
     // otherwise, return the latest image buffer pointer
+    if (latest_img_ptr == 0)
+        return 0;
     occupied_img_ptr = latest_img_ptr;
     latest_img_ptr = 0;
     return occupied_img_ptr;
@@ -39,6 +41,7 @@ void* Camera_Release(uint16 (*img_ptr)[CAM_IMAGE_WIDTH]) {
 }
 
 void* _Camera_Image_Received(void) {
+//    IfxPort_togglePin(IO_LED4_PORT, IO_LED4_PIN);
     uint16 (*temp_ptr)[CAM_IMAGE_WIDTH] = writing_img_ptr;
     // if there is a buffer occupied, then there is only one buffer available
     if (occupied_img_ptr != 0) {
@@ -1725,7 +1728,7 @@ void _atk_mc2640_colorbar_disable(void)
  * @param       无
  * @retval      无
  */
-void IO_Vsync_ISR(void) {
+void Camera_Vsync_ISR(void) {
     if (IfxPort_getPinState(CAM_VSYNC_SW_EXTI_PIN.pin.port, CAM_VSYNC_SW_EXTI_PIN.pin.pinIndex) == 1) {
         IfxDma_setChannelDestinationAddress(&MODULE_DMA, CAMERA_PCLK_PRIORITY,
         (void*) IFXCPU_GLB_ADDR_DSPR(IfxCpu_getCoreId(), writing_img_ptr));
@@ -1733,7 +1736,7 @@ void IO_Vsync_ISR(void) {
         IfxDma_disableChannelTransaction(&MODULE_DMA, CAMERA_PCLK_PRIORITY);
         _Camera_Image_Received();
     }
-    IfxPort_togglePin(IO_LED2_PORT, IO_LED2_PIN);
+//    IfxPort_togglePin(IO_LED2_PORT, IO_LED2_PIN);
 }
 
 /**
@@ -1741,13 +1744,13 @@ void IO_Vsync_ISR(void) {
  * @param       无
  * @retval      无
  */
-void IO_Hsync_ISR(void) {
+void Camera_Hsync_ISR(void) {
     if (IfxPort_getPinState(CAM_HSYNC_SW_EXTI_PIN.pin.port, CAM_HSYNC_SW_EXTI_PIN.pin.pinIndex) == 1) {
         IfxDma_enableChannelTransaction(&MODULE_DMA, CAMERA_PCLK_PRIORITY);
     } else {
         IfxDma_disableChannelTransaction(&MODULE_DMA, CAMERA_PCLK_PRIORITY);
     }
-    IfxPort_togglePin(IO_LED3_PORT, IO_LED3_PIN);
+//    IfxPort_togglePin(IO_LED3_PORT, IO_LED3_PIN);
 }
 
 
@@ -1941,7 +1944,7 @@ uint8 Camera_Init(void) {
 //
 //        }
     }
-    _atk_mc2640_set_output_speed(2, 22);                                     /* 输出速率 */
+    _atk_mc2640_set_output_speed(0, 15);                                     /* 输出速率 */
     _atk_mc2640_set_light_mode(ATK_MC2640_LIGHT_MODE_SUNNY);                 /* 设置灯光模式 */
     _atk_mc2640_set_color_saturation(ATK_MC2640_COLOR_SATURATION_1);         /* 设置色彩饱和度 */
     _atk_mc2640_set_brightness(ATK_MC2640_BRIGHTNESS_1);                     /* 设置亮度 */

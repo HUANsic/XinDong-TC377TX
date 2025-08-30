@@ -116,16 +116,16 @@ void IO_LED_Toggle(int ledNum) {
 // Returns TRUE if the switch is in one state, FALSE otherwise
 boolean IO_DIP_Read(int swNum) {
 	if (swNum == 1) {
-		return IfxPort_getPinState(&MODULE_P20, 14);
+		return IfxPort_getPinState(IO_DIP1_PORT, IO_DIP1_PIN);
 	}
 	else if (swNum == 2) {
-		return IfxPort_getPinState(&MODULE_P20, 13);
+		return IfxPort_getPinState(IO_DIP2_PORT, IO_DIP2_PIN);
 	}
 	else if (swNum == 3) {
-		return IfxPort_getPinState(&MODULE_P20, 12);
+		return IfxPort_getPinState(IO_DIP3_PORT, IO_DIP3_PIN);
 	}
 	else if (swNum == 4) {
-		return IfxPort_getPinState(&MODULE_P20, 11);
+		return IfxPort_getPinState(IO_DIP4_PORT, IO_DIP4_PIN);
 	}
 	else {
 		return FALSE; // Return default value for invalid number
