@@ -209,47 +209,59 @@ uint8 dmpUpdates[47]={
 
 };
 
-void _MPU6050_Write_Byte(uint8 reg, uint8 data) {
-    EI2C_Mem_Write(&MPU6050_I2C_Struct, MPU6050_ADDR, reg, &data, 1);
+EI2C_Status _MPU6050_Write_Byte(uint8 reg, uint8 data) {
+    return EI2C_Mem_Write(&MPU6050_I2C_Struct, MPU6050_ADDR, reg, &data, 1);
 }
 
-void _MPU6050_Write_Bit(uint8 reg, uint8 bitNum, uint8 data) {
+EI2C_Status _MPU6050_Write_Bit(uint8 reg, uint8 bitNum, uint8 data) {
     uint8 currentData;
-    EI2C_Mem_Read(&MPU6050_I2C_Struct, MPU6050_ADDR, reg, &currentData, 1);
+    EI2C_Status status;
+    status = EI2C_Mem_Read(&MPU6050_I2C_Struct, MPU6050_ADDR, reg, &currentData, 1);
+    if (status != EI2C_OK) {
+        return status;
+    }
     if (data) {
         currentData |= (1 << bitNum);
     } else {
         currentData &= ~(1 << bitNum);
     }
-    EI2C_Mem_Write(&MPU6050_I2C_Struct, MPU6050_ADDR, reg, &currentData, 1);
+    return EI2C_Mem_Write(&MPU6050_I2C_Struct, MPU6050_ADDR, reg, &currentData, 1);
 }
 
-void _MPU6050_Write_Bits(uint8 reg, uint8 bitStart, uint8 length, uint8 data) {
+EI2C_Status _MPU6050_Write_Bits(uint8 reg, uint8 bitStart, uint8 length, uint8 data) {
     uint8 currentData = 0;
-    EI2C_Mem_Read(&MPU6050_I2C_Struct, MPU6050_ADDR, reg, &currentData, 1);
+    EI2C_Status status;
+    status = EI2C_Mem_Read(&MPU6050_I2C_Struct, MPU6050_ADDR, reg, &currentData, 1);
+    if (status != EI2C_OK) {
+        return status;
+    }
     uint8 mask = ((1 << length) - 1) << (bitStart - length + 1);
     currentData &= ~mask; // Clear the bits
     currentData |= (data << (bitStart - length + 1)) & mask; // Set the bits
-    EI2C_Mem_Write(&MPU6050_I2C_Struct, MPU6050_ADDR, reg, &currentData, 1);
+    return EI2C_Mem_Write(&MPU6050_I2C_Struct, MPU6050_ADDR, reg, &currentData, 1);
 }
 
-void _MPU6050_Read(uint8 reg, uint16 length, uint8 *data) {
-    EI2C_Mem_Read(&MPU6050_I2C_Struct, MPU6050_ADDR, reg, data, length);
+EI2C_Status _MPU6050_Read(uint8 reg, uint16 length, uint8 *data) {
+    return EI2C_Mem_Read(&MPU6050_I2C_Struct, MPU6050_ADDR, reg, data, length);
 }
 
-void _MPU6050_Read_Bit(uint8 reg, uint8 bitNum, uint8 *data) {
+EI2C_Status _MPU6050_Read_Bit(uint8 reg, uint8 bitNum, uint8 *data) {
     uint8 currentData;
-    EI2C_Mem_Read(&MPU6050_I2C_Struct, MPU6050_ADDR, reg, &currentData, 1);
+    EI2C_Status status;
+    status = EI2C_Mem_Read(&MPU6050_I2C_Struct, MPU6050_ADDR, reg, &currentData, 1);
     *data = currentData & (1 << bitNum);
+    return status;
 }
 
-void _MPU6050_Read_Bits(uint8 reg, uint8 bitStart, uint8 length, uint8 *data) {
+EI2C_Status _MPU6050_Read_Bits(uint8 reg, uint8 bitStart, uint8 length, uint8 *data) {
     uint8 currentData = 0;
-    EI2C_Mem_Read(&MPU6050_I2C_Struct, MPU6050_ADDR, reg, &currentData, 1);
+    EI2C_Status status;
+    status = EI2C_Mem_Read(&MPU6050_I2C_Struct, MPU6050_ADDR, reg, &currentData, 1);
     uint8 mask = ((1 << length) - 1) << (bitStart - length + 1);
     currentData &= mask;
     currentData >>= (bitStart - length + 1);
     *data = currentData;
+    return status;
 }
 
 uint8 _MPU6050_Load_Firmware() {
@@ -257,6 +269,7 @@ uint8 _MPU6050_Load_Firmware() {
     uint8 ye,i;
     uint8 bank=0;   //段（256个数据一段）
     uint8 addr=0;
+    EI2C_Status status;
 
     for(;bank<8;bank++)
     {
@@ -269,7 +282,10 @@ uint8 _MPU6050_Load_Firmware() {
             _MPU6050_Write_Byte(0x6d,bank);
             _MPU6050_Write_Byte(0x6e,addr);
 
-            EI2C_Mem_Write(&MPU6050_I2C_Struct, MPU6050_ADDR, 0x6f, dmpmemorydata + datanum, 16);
+            status = EI2C_Mem_Write(&MPU6050_I2C_Struct, MPU6050_ADDR, 0x6f, dmpmemorydata + datanum, 16);
+            if (status != EI2C_OK) {
+                return 0;
+            }
             datanum += 16;
             addr += 16;
         }
@@ -277,10 +293,11 @@ uint8 _MPU6050_Load_Firmware() {
     _MPU6050_Write_Byte(0x6d,7);
     _MPU6050_Write_Byte(0x6e,addr);
 
-    EI2C_Mem_Write(&MPU6050_I2C_Struct, MPU6050_ADDR, 0x6f, dmpmemorydata + datanum, 9);
+    status = EI2C_Mem_Write(&MPU6050_I2C_Struct, MPU6050_ADDR, 0x6f, dmpmemorydata + datanum, 9);
 
-//    OLED_Printf(65,45,6,"%d",datanum + 9);
-//    OLED_Update();
+    if (status != EI2C_OK) {
+        return 0;
+    }
     return 1;
 }
 
@@ -292,6 +309,7 @@ uint8 _MPU6050_Loadcfgupd() {
     uint8 offset;   //偏移地址
 //    uint8 writingcounts;    //数据写入标志与bytes2write一同使用
     uint8 special;
+    EI2C_Status status;
 
     for (line=0;line<30;line++)
     {
@@ -301,7 +319,10 @@ uint8 _MPU6050_Loadcfgupd() {
         _MPU6050_Write_Byte(0x6d,bank);
         _MPU6050_Write_Byte(0x6e,offset);
 
-        EI2C_Mem_Write(&MPU6050_I2C_Struct, MPU6050_ADDR, 0x6f, dmpcfgupddata + datacounts, bytes2write);
+        status = EI2C_Mem_Write(&MPU6050_I2C_Struct, MPU6050_ADDR, 0x6f, dmpcfgupddata + datacounts, bytes2write);
+        if (status != EI2C_OK) {
+            return 0;
+        }
 
         datacounts += bytes2write;
 
@@ -326,18 +347,23 @@ uint8 _MPU6050_DMP_Updates(uint8 datacounts) {
     bank = dmpUpdates[datacounts++];
     offset = dmpUpdates[datacounts++];
     bytes2write = dmpUpdates[datacounts++];
+    EI2C_Status status;
 
     _MPU6050_Write_Byte(0x6d, bank);
     _MPU6050_Write_Byte(0x6e, offset);
 
-    EI2C_Mem_Write(&MPU6050_I2C_Struct, MPU6050_ADDR, 0x6f, dmpUpdates + datacounts, bytes2write);
+    status = EI2C_Mem_Write(&MPU6050_I2C_Struct, MPU6050_ADDR, 0x6f, dmpUpdates + datacounts, bytes2write);
+
+    if (status != EI2C_OK) {
+        return 0;
+    }
 
     // datacounts += bytes2write;
 
     return 1;
 }
 
-uint32 MPU6050_Get_FIFO_Count() {
+uint32 _MPU6050_Get_FIFO_Count() {
     uint8 i[2];
     EI2C_Mem_Read(&MPU6050_I2C_Struct, MPU6050_ADDR, 0x72, i, 2);
 //    OLED_Printf(5,45,6,"%d",i[0]);
@@ -346,9 +372,8 @@ uint32 MPU6050_Get_FIFO_Count() {
     return ((i[0] << 8) + i[1]);
 }
 
-uint8 _MPU6050_Read_DMP(uint8 *data) {
-    _MPU6050_Read(0x74, 42, data);
-    return 1; // Assuming read is always successful
+EI2C_Status _MPU6050_Read_DMP(uint8 *data) {
+    return _MPU6050_Read(0x74, 42, data);
 }
 
 void _DMP_Init() {
@@ -389,7 +414,7 @@ void _DMP_Init() {
     _MPU6050_DMP_Updates(0);    //最后更新1/7(函数未知)dmpUpdates数组第一行
     _MPU6050_DMP_Updates(5);    //最后更新2/7(函数未知)dmpUpdates数组第二行
     _MPU6050_Write_Bit(0x6A,2,1);   //复位 FIFO
-    fifoCount = MPU6050_Get_FIFO_Count();   //读取 FIFO 计数
+    fifoCount = _MPU6050_Get_FIFO_Count();   //读取 FIFO 计数
     //readdmp(fifoCount,fifoBuffer);    //读取FIFO里的数据
     _MPU6050_Write_Bit(0x6A,2,1);   //复位 FIFO
 
@@ -404,12 +429,12 @@ void _DMP_Init() {
     _MPU6050_DMP_Updates(12);   //最后更新3/7(函数未知)dmpUpdates数组第三行
     _MPU6050_DMP_Updates(17);   //最后更新4/7(函数未知)dmpUpdates数组第四行
     _MPU6050_DMP_Updates(28);   //最后更新5/7(函数未知)dmpUpdates数组第五行
-    while((fifoCount = MPU6050_Get_FIFO_Count()) < 3);  //等待 FIFO 计数 > 2
+    while((fifoCount = _MPU6050_Get_FIFO_Count()) < 3);  //等待 FIFO 计数 > 2
     _MPU6050_Write_Bit(0x6A,2,1);   //复位 FIFO
     //readdmp(fifoCount,fifoBuffer);    //读取FIFO里的数据
     _MPU6050_Read(0x3A,1,&mpuIntStatus);    //读取中断状态
     _MPU6050_DMP_Updates(35);   //最后更新6/7(函数未知)dmpUpdates数组第六行
-    while((fifoCount = MPU6050_Get_FIFO_Count()) < 3);  //等待 FIFO 计数 > 2
+    while((fifoCount = _MPU6050_Get_FIFO_Count()) < 3);  //等待 FIFO 计数 > 2
     _MPU6050_Write_Bit(0x6A,2,1);   //复位 FIFO
     //readdmp(fifoCount,fifoBuffer);    //读取FIFO里的数据
     _MPU6050_Read(0x3A,1,&mpuIntStatus);    //读取中断状态
@@ -524,16 +549,26 @@ void _MPU6050_Smooth_Theta() {
     }
 }
 
-void MPU6050_Read_Theta() {
+EI2C_Status MPU6050_Read_Theta() {
+    EI2C_Status retVal = EI2C_OK;
     uint8 zd;
-    uint32 i = MPU6050_Get_FIFO_Count();
-    _MPU6050_Read(0x3A, 1, &zd); // Read interrupt status
+    uint32 i = _MPU6050_Get_FIFO_Count();
+    retVal = _MPU6050_Read(0x3A, 1, &zd); // Read interrupt status
+    if (retVal != EI2C_OK) {
+        return retVal;
+    }
     if ((zd & 0x10) || i == 1024) { //
-        _MPU6050_Write_Bit(0x6A, 2, 1); // Reset FIFO
+        retVal = _MPU6050_Write_Bit(0x6A, 2, 1); // Reset FIFO
+        if (retVal != EI2C_OK) {
+            return retVal;
+        }
     } else if (zd & 0x02) { // If data ready
         uint8 dmpData[42];
-        while (i < 42) i = MPU6050_Get_FIFO_Count();
-        _MPU6050_Read_DMP(dmpData); // Read DMP data
+        while (i < 42) i = _MPU6050_Get_FIFO_Count();
+        retVal = _MPU6050_Read_DMP(dmpData); // Read DMP data
+        if (retVal != EI2C_OK) {
+            return retVal;
+        }
         // Process quaternion data to calculate theta
         double q0 = (double)(((sint16)dmpData[0] << 8) | dmpData[1])/ 16384.0;
         double q1 = (double)(((sint16)dmpData[4] << 8) | dmpData[5])/ 16384.0;
@@ -553,18 +588,19 @@ void MPU6050_Read_Theta() {
                         1 - 2.0 * (q1 * q1 + q2 * q2)) * 57.3;
     }
     _MPU6050_Smooth_Theta(); // Smooth theta values
-}
-
-void MPU6050_Get_Omega(double *omegaX, double *omegaY, double *omegaZ) {
-    *omegaX = omega[0];
-    *omegaY = omega[1];
-    *omegaZ = omega[2];
+    return retVal;
 }
 
 void MPU6050_Get_Accel(double *accelX, double *accelY, double *accelZ) {
     *accelX = accel[0];
     *accelY = accel[1];
     *accelZ = accel[2];
+}
+
+void MPU6050_Get_Omega(double *omegaX, double *omegaY, double *omegaZ) {
+    *omegaX = omega[0];
+    *omegaY = omega[1];
+    *omegaZ = omega[2];
 }
 
 void MPU6050_Get_Theta(double *thetaX, double *thetaY, double *thetaZ) {
@@ -589,13 +625,4 @@ void MPU6050_Set_ThetaOffset() {
     theta_offset[0] = theta[0];
     theta_offset[1] = theta[1];
     theta_offset[2] = theta[2];
-}
-
-void MPU6050_Step_Theta(float dt) {
-    if (omega[0] > MPU6050_OMEGA_INT_THRESHOLD || omega[0] < -MPU6050_OMEGA_INT_THRESHOLD)
-        theta[0] += omega[0] * dt;
-    if (omega[1] > MPU6050_OMEGA_INT_THRESHOLD || omega[1] < -MPU6050_OMEGA_INT_THRESHOLD)
-        theta[1] += omega[1] * dt;
-    if (omega[2] > MPU6050_OMEGA_INT_THRESHOLD || omega[2] < -MPU6050_OMEGA_INT_THRESHOLD)
-        theta[2] += omega[2] * dt;
 }
