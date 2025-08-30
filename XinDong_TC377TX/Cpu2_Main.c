@@ -80,6 +80,9 @@ void core2_main(void) {
 		// some code to indicate that the core is not dead
 		IO_LED_Toggle(3);
 		Time_Delay_us(100000);
+		// update AT pin according to DIP state
+		Bluetooth_AT(IO_DIP_Read(1));
+		IO_LED_Set(4, IO_DIP_Read(1));
 	}
 }
 
@@ -123,7 +126,7 @@ void Serial_Received(uint8 *dataptr, uint32 length, uint8 tag) {
 
 		break;
 	default:
-		;
+		Bluetooth_Transmit(dataptr, 1);
 	}
 }
 
@@ -133,6 +136,6 @@ void Bluetooth_Received(uint8 *dataptr, uint32 length, uint8 tag) {
 
 		break;
 	default:
-		;
+		Serial_Transmit(dataptr, 1);
 	}
 }
