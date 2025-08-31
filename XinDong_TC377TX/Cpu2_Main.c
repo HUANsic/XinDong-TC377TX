@@ -40,6 +40,22 @@
 #include "XinDongLib/Ultrasonic.h"
 #include "XinDongLib/Time.h"
 #include "XinDongLib/ADC.h"
+#include "XinDongLib/CV.h"
+
+// PID control parameters
+#define TURN_KP  0.003f   // Steering P parameter
+#define TURN_KD  0.001f   // Steering D parameter
+#define SPEED_NORMAL  0.3f    // Normal speed (30%)
+#define SPEED_TURN   0.25f    // Turn speed (25%)
+
+// Straight/Turn detection thresholds
+#define STRAIGHT_ERROR_THRESHOLD 10    // Midline error threshold
+#define TURN_COUNT_THRESHOLD    5      // Consecutive detection count threshold
+
+// Line following variables
+static sint16 last_error = 0;       // Previous error
+static uint8 turn_count = 0;        // Consecutive turn counter
+static float current_speed = SPEED_NORMAL;  // Current speed
 
 extern IfxCpu_syncEvent g_cpuSyncEvent;
 
@@ -75,9 +91,12 @@ void core2_main(void) {
 	while (Intercore_ReadyToGo() == 0)
 		;
 
+	// Set servo center calibration (if needed)
+    Servo_SetCenter(0.0f);
+    
 	// main loop
 	while (1) {
-		// some code to indicate that the core is not dead
+		// Running indicator
 		IO_LED_Toggle(3);
 		Time_Delay_us(100000);
 	}
@@ -94,7 +113,37 @@ void Periodic_100ms_ISR(void) {
 }
 
 void Periodic_10ms_ISR(void) {
-	;
+	CV_Result_t cv_result;
+    float servo_output;
+    
+    // 1. Get image processing result
+    cv_result = CV_ProcessImage();
+    
+    if(cv_result.valid) {
+        // 2. Detect straight/turn section
+        if(abs(cv_result.error) > STRAIGHT_ERROR_THRESHOLD) {
+            // Possible turn detected
+            turn_count++;
+            if(turn_count > TURN_COUNT_THRESHOLD) {
+                current_speed = SPEED_TURN;  // Reduce speed for turn
+            }
+        } else {
+            // Straight section
+            turn_count = 0;
+            current_speed = SPEED_NORMAL;  // Resume normal speed
+        }
+        
+        // 3. Calculate servo output (PD control)
+        servo_output = TURN_KP * cv_result.error + 
+                      TURN_KD * (cv_result.error - last_error);
+                      
+        // 4. Update control outputs
+        Motor_Set(current_speed);
+        Servo_Set(servo_output);
+        
+        // 5. Save previous error
+        last_error = cv_result.error;
+    }
 }
 
 void Periodic_PID_ISR(void) {
