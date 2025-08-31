@@ -66,7 +66,7 @@
 #define		SERIAL_RX_ASCLIN_PIN	IfxAsclin3_RXA_P15_7_IN
 
 // servo: P33.4
-#define		SERVO_TOM_PIN			IfxGtm_TOM1_0_TOUT26_P33_4_OUT
+#define		SERVO_TOM_PIN			IfxGtm_TOM0_0_TOUT26_P33_4_OUT
 #define		SERVO_PORT				&MODULE_P33
 #define		SERVO_PIN				4
 
