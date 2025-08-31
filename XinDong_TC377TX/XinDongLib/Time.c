@@ -86,6 +86,7 @@ void Time_Periodic_ISR(void) {
 	IfxGtm_Tom_Timer_acknowledgeTimerIrq(&clock);
 
 	// run user ISR
+#ifndef XINDONG_DEBUG
 	if (elapsed_ms % 10 == 0)
 		SWINT_Trigger_10ms();
 	if (elapsed_ms % PID_PERIOD_MS == 0)
@@ -94,4 +95,5 @@ void Time_Periodic_ISR(void) {
 		SWINT_Trigger_100ms();
 	if (elapsed_ms % 1000 == 0)
 		SWINT_Trigger_1s();
+#endif
 }

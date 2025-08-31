@@ -6,6 +6,8 @@
 
 #define		__weak__				__attribute__((weak))
 
+#define		XINDONG_DEBUG
+
 #define		PID_PERIOD_MS			50
 
 /*	Pin Assignments */

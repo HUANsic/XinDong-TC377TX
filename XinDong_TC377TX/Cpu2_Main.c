@@ -41,6 +41,8 @@
 #include "XinDongLib/Time.h"
 #include "XinDongLib/ADC.h"
 
+#include "HUANsic_SU20T.h"
+
 extern IfxCpu_syncEvent g_cpuSyncEvent;
 
 void core2_main(void) {
@@ -59,18 +61,24 @@ void core2_main(void) {
 		;
 
 	// initialize any module needed
+	Serial_Init();
+	Bluetooth_Init();
 	ADC_Init();
 	Ultrasonic_Init();
+	OLED_Init();
+	MPU6050_Init();
 	Encoder_Init();
 	Servo_Init();
 	Motor_Init();
 	PID_Init(0.1, 0.0, 0.0);
+	SU20T_Init();
+
 	// wait for other cores to finish initialization
 	Intercore_CPU2_Ready();
 	while (Intercore_ReadyToGo() == 0)
 		;
 
-
+	// main loop
 	while (1) {
 		// some code to indicate that the core is not dead
 		IO_LED_Toggle(3);
@@ -85,7 +93,7 @@ void Periodic_1s_ISR(void) {
 }
 
 void Periodic_100ms_ISR(void) {
-	;
+	SU20T_100ms_Isr();
 }
 
 void Periodic_10ms_ISR(void) {
@@ -118,7 +126,9 @@ void Serial_Received(uint8 *dataptr, uint32 length, uint8 tag) {
 
 		break;
 	default:
-		;
+		if(length == 1) {
+			SU20T_EatByte(*dataptr);
+		}
 	}
 }
 

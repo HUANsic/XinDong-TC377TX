@@ -8,11 +8,15 @@
 #ifndef HUANSIC_SU20T_H_
 #define HUANSIC_SU20T_H_
 
+#include <Ifx_Types.h>
+
 void SU20T_Init(void);
 
 uint8 SU20T_Check(void);
 
 void SU20T_Decode(uint8 *msg);
+
+void SU20T_EatByte(uint8 data);
 
 void SU20T_100ms_Isr(void);
 
