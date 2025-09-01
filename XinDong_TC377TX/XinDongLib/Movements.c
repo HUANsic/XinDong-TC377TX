@@ -69,7 +69,7 @@ void Motor_Init() {
     config.clock = IfxGtm_Tom_Ch_ClkSrc_cmuFxclk0;
     config.period = MOTOR_PERIOD;
     config.dutyCycle = 0;
-    config.signalLevel = Ifx_ActiveState_low;
+    config.signalLevel = Ifx_ActiveState_high;
     config.synchronousUpdateEnabled = TRUE;     // avoid changing in the middle
     config.pin.outputPin = &MOTOR_OUTB_TOM_PIN;
 
