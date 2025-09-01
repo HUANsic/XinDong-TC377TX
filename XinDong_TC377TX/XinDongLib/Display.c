@@ -1,4 +1,5 @@
 #include "Display.h"
+#include "IfxI2c_PinMap.h"
 #include <string.h>
 #include <math.h>
 #include <stdio.h>
@@ -620,11 +621,11 @@ uint8 OLED_DisplayBuf[8][128];
 void _OLED_GPIO_Init(void)
 {
     /*I2C初始化*/
-    OLED_I2C_Struct.scl_port = I2C_SCL_PORT;
-    OLED_I2C_Struct.scl_pin = I2C_SCL_PIN;
+    OLED_I2C_Struct.scl_port = I2C_SCL_I2C_PIN.pin.port;
+    OLED_I2C_Struct.scl_pin = I2C_SCL_I2C_PIN.pin.pinIndex;
 
-    OLED_I2C_Struct.sda_port = I2C_SDA_PORT;
-    OLED_I2C_Struct.sda_pin = I2C_SDA_PIN;
+    OLED_I2C_Struct.sda_port = I2C_SDA_I2C_PIN.pin.port;
+    OLED_I2C_Struct.sda_pin = I2C_SDA_I2C_PIN.pin.pinIndex;
 
     OLED_I2C_Struct.status = EI2C_NOT_READY;
     /*I2C初始化*/

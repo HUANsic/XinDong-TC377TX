@@ -1,4 +1,5 @@
 #include "IMU.h"
+#include "IfxI2c_PinMap.h"
 #include "Display.h"
 #include "Time.h"
 
@@ -464,11 +465,11 @@ void _MPU6050_Data_Init() {
 
 void MPU6050_Init() {
     //port configuration
-    MPU6050_I2C_Struct.scl_port = I2C_SCL_PORT;
-    MPU6050_I2C_Struct.scl_pin = I2C_SCL_PIN;
+    MPU6050_I2C_Struct.scl_port = I2C_SCL_I2C_PIN.pin.port;
+    MPU6050_I2C_Struct.scl_pin = I2C_SCL_I2C_PIN.pin.pinIndex;
 
-    MPU6050_I2C_Struct.sda_port = I2C_SDA_PORT;
-    MPU6050_I2C_Struct.sda_pin = I2C_SDA_PIN;
+    MPU6050_I2C_Struct.sda_port = I2C_SDA_I2C_PIN.pin.port;
+    MPU6050_I2C_Struct.sda_pin = I2C_SDA_I2C_PIN.pin.pinIndex;
 
     MPU6050_I2C_Struct.status = EI2C_NOT_READY;
 
