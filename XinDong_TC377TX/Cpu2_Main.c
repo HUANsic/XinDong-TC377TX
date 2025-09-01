@@ -46,6 +46,8 @@ extern IfxCpu_syncEvent g_cpuSyncEvent;
 float center1 = 0, range1 = 0.33, output = 0, increment = 0.1;
 uint8 state = 0;
 
+char startMsg[] = "Hello";
+
 void core2_main(void) {
 	IfxCpu_enableInterrupts();
 	/* !!WATCHDOG2 IS DISABLED HERE!!
@@ -84,7 +86,12 @@ void core2_main(void) {
 	Servo_SetCenter(0);
 	// set demo step size
 	increment = range1 / 10;
+	// prepare display
+	OLED_ShowString(0, 0, startMsg, OLED_8X16);
+	OLED_Update();
+	Time_Delay(1000);
 
+	// main loop
 	while (1) {
 		// some code to indicate that the core is not dead
 		IO_LED_Toggle(3);

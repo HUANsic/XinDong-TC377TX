@@ -17,11 +17,11 @@
 #define PWR_MGMT_1_REG 0x6B
 #define WHO_AM_I_REG 0x75
 
-double accel[3], omega[3], theta[3], accel_offset[3], omega_offset[3], theta_offset[3];
+double _imu_accel[3], _imu_omega[3], _imu_theta[3], _imu_accel_offset[3], _imu_omega_offset[3], _imu_theta_offset[3];
 
-EI2C_Typedef MPU6050_I2C_Struct;
+EI2C_Typedef _MPU6050_I2C_Struct;
 
-uint8 dmpmemorydata[1929]={
+uint8 _dmpmemorydata[1929]={
 // bank 0, 256 bytes
    0xFB, 0x00, 0x00, 0x3E, 0x00, 0x0B, 0x00, 0x36, 0x00, 0x01, 0x00, 0x02, 0x00, 0x03, 0x00, 0x00,
    0x00, 0x65, 0x00, 0x54, 0xFF, 0xEF, 0x00, 0x00, 0xFA, 0x80, 0x00, 0x0B, 0x12, 0x82, 0x00, 0x01,
@@ -152,7 +152,7 @@ uint8 dmpmemorydata[1929]={
    0x98, 0xF1, 0xA3, 0xA3, 0xA3, 0xA3, 0x97, 0xA3, 0xA3, 0xA3, 0xA3, 0xF3, 0x9B, 0xA3, 0xA3, 0xDC,
    0xB9, 0xA7, 0xF1, 0x26, 0x26, 0x26, 0xD8, 0xD8, 0xFF
 };
-uint8 dmpcfgupddata[192] = {
+uint8 _dmpcfgupddata[192] = {
 //  dmp config
 //  BANK    OFFSET  LENGTH  [DATA]
     0x03,   0x7B,   0x03,   0x4C, 0xCD, 0x6C,
@@ -199,7 +199,7 @@ uint8 dmpcfgupddata[192] = {
     0x01,   0x62,   0x02,   0x00, 0x00,
     0x00,   0x60,   0x04,   0x00, 0x40, 0x00, 0x00*/
 };
-uint8 dmpUpdates[47]={
+uint8 _dmpUpdates[47]={
 
     0x01,   0xB2,   0x02,   0xFF, 0xFF,
     0x01,   0x90,   0x04,   0x09, 0x23, 0xA1, 0x35,
@@ -212,13 +212,13 @@ uint8 dmpUpdates[47]={
 };
 
 EI2C_Status _MPU6050_Write_Byte(uint8 reg, uint8 data) {
-    return EI2C_Mem_Write(&MPU6050_I2C_Struct, MPU6050_ADDR, reg, &data, 1);
+    return EI2C_Mem_Write(&_MPU6050_I2C_Struct, MPU6050_ADDR, reg, &data, 1);
 }
 
 EI2C_Status _MPU6050_Write_Bit(uint8 reg, uint8 bitNum, uint8 data) {
     uint8 currentData;
     EI2C_Status status;
-    status = EI2C_Mem_Read(&MPU6050_I2C_Struct, MPU6050_ADDR, reg, &currentData, 1);
+    status = EI2C_Mem_Read(&_MPU6050_I2C_Struct, MPU6050_ADDR, reg, &currentData, 1);
     if (status != EI2C_OK) {
         return status;
     }
@@ -227,30 +227,30 @@ EI2C_Status _MPU6050_Write_Bit(uint8 reg, uint8 bitNum, uint8 data) {
     } else {
         currentData &= ~(1 << bitNum);
     }
-    return EI2C_Mem_Write(&MPU6050_I2C_Struct, MPU6050_ADDR, reg, &currentData, 1);
+    return EI2C_Mem_Write(&_MPU6050_I2C_Struct, MPU6050_ADDR, reg, &currentData, 1);
 }
 
 EI2C_Status _MPU6050_Write_Bits(uint8 reg, uint8 bitStart, uint8 length, uint8 data) {
     uint8 currentData = 0;
     EI2C_Status status;
-    status = EI2C_Mem_Read(&MPU6050_I2C_Struct, MPU6050_ADDR, reg, &currentData, 1);
+    status = EI2C_Mem_Read(&_MPU6050_I2C_Struct, MPU6050_ADDR, reg, &currentData, 1);
     if (status != EI2C_OK) {
         return status;
     }
     uint8 mask = ((1 << length) - 1) << (bitStart - length + 1);
     currentData &= ~mask; // Clear the bits
     currentData |= (data << (bitStart - length + 1)) & mask; // Set the bits
-    return EI2C_Mem_Write(&MPU6050_I2C_Struct, MPU6050_ADDR, reg, &currentData, 1);
+    return EI2C_Mem_Write(&_MPU6050_I2C_Struct, MPU6050_ADDR, reg, &currentData, 1);
 }
 
 EI2C_Status _MPU6050_Read(uint8 reg, uint16 length, uint8 *data) {
-    return EI2C_Mem_Read(&MPU6050_I2C_Struct, MPU6050_ADDR, reg, data, length);
+    return EI2C_Mem_Read(&_MPU6050_I2C_Struct, MPU6050_ADDR, reg, data, length);
 }
 
 EI2C_Status _MPU6050_Read_Bit(uint8 reg, uint8 bitNum, uint8 *data) {
     uint8 currentData;
     EI2C_Status status;
-    status = EI2C_Mem_Read(&MPU6050_I2C_Struct, MPU6050_ADDR, reg, &currentData, 1);
+    status = EI2C_Mem_Read(&_MPU6050_I2C_Struct, MPU6050_ADDR, reg, &currentData, 1);
     *data = currentData & (1 << bitNum);
     return status;
 }
@@ -258,7 +258,7 @@ EI2C_Status _MPU6050_Read_Bit(uint8 reg, uint8 bitNum, uint8 *data) {
 EI2C_Status _MPU6050_Read_Bits(uint8 reg, uint8 bitStart, uint8 length, uint8 *data) {
     uint8 currentData = 0;
     EI2C_Status status;
-    status = EI2C_Mem_Read(&MPU6050_I2C_Struct, MPU6050_ADDR, reg, &currentData, 1);
+    status = EI2C_Mem_Read(&_MPU6050_I2C_Struct, MPU6050_ADDR, reg, &currentData, 1);
     uint8 mask = ((1 << length) - 1) << (bitStart - length + 1);
     currentData &= mask;
     currentData >>= (bitStart - length + 1);
@@ -284,7 +284,7 @@ uint8 _MPU6050_Load_Firmware() {
             _MPU6050_Write_Byte(0x6d,bank);
             _MPU6050_Write_Byte(0x6e,addr);
 
-            status = EI2C_Mem_Write(&MPU6050_I2C_Struct, MPU6050_ADDR, 0x6f, dmpmemorydata + datanum, 16);
+            status = EI2C_Mem_Write(&_MPU6050_I2C_Struct, MPU6050_ADDR, 0x6f, _dmpmemorydata + datanum, 16);
             if (status != EI2C_OK) {
                 return 0;
             }
@@ -295,7 +295,7 @@ uint8 _MPU6050_Load_Firmware() {
     _MPU6050_Write_Byte(0x6d,7);
     _MPU6050_Write_Byte(0x6e,addr);
 
-    status = EI2C_Mem_Write(&MPU6050_I2C_Struct, MPU6050_ADDR, 0x6f, dmpmemorydata + datanum, 9);
+    status = EI2C_Mem_Write(&_MPU6050_I2C_Struct, MPU6050_ADDR, 0x6f, _dmpmemorydata + datanum, 9);
 
     if (status != EI2C_OK) {
         return 0;
@@ -315,13 +315,13 @@ uint8 _MPU6050_Loadcfgupd() {
 
     for (line=0;line<30;line++)
     {
-        bank=dmpcfgupddata[datacounts++];
-        offset=dmpcfgupddata[datacounts++];
-        bytes2write=dmpcfgupddata[datacounts++];
+        bank=_dmpcfgupddata[datacounts++];
+        offset=_dmpcfgupddata[datacounts++];
+        bytes2write=_dmpcfgupddata[datacounts++];
         _MPU6050_Write_Byte(0x6d,bank);
         _MPU6050_Write_Byte(0x6e,offset);
 
-        status = EI2C_Mem_Write(&MPU6050_I2C_Struct, MPU6050_ADDR, 0x6f, dmpcfgupddata + datacounts, bytes2write);
+        status = EI2C_Mem_Write(&_MPU6050_I2C_Struct, MPU6050_ADDR, 0x6f, _dmpcfgupddata + datacounts, bytes2write);
         if (status != EI2C_OK) {
             return 0;
         }
@@ -329,7 +329,7 @@ uint8 _MPU6050_Loadcfgupd() {
         datacounts += bytes2write;
 
         if (bytes2write == 0) {
-            special = dmpcfgupddata[datacounts++];
+            special = _dmpcfgupddata[datacounts++];
             if (special == 0x01) {
                 // Enable zero motion interrupt (true);
                 // Enable FIFO buffer overflow (true);
@@ -346,15 +346,15 @@ uint8 _MPU6050_Loadcfgupd() {
 
 uint8 _MPU6050_DMP_Updates(uint8 datacounts) {
     uint8 bank, offset, bytes2write;
-    bank = dmpUpdates[datacounts++];
-    offset = dmpUpdates[datacounts++];
-    bytes2write = dmpUpdates[datacounts++];
+    bank = _dmpUpdates[datacounts++];
+    offset = _dmpUpdates[datacounts++];
+    bytes2write = _dmpUpdates[datacounts++];
     EI2C_Status status;
 
     _MPU6050_Write_Byte(0x6d, bank);
     _MPU6050_Write_Byte(0x6e, offset);
 
-    status = EI2C_Mem_Write(&MPU6050_I2C_Struct, MPU6050_ADDR, 0x6f, dmpUpdates + datacounts, bytes2write);
+    status = EI2C_Mem_Write(&_MPU6050_I2C_Struct, MPU6050_ADDR, 0x6f, _dmpUpdates + datacounts, bytes2write);
 
     if (status != EI2C_OK) {
         return 0;
@@ -367,7 +367,7 @@ uint8 _MPU6050_DMP_Updates(uint8 datacounts) {
 
 uint32 _MPU6050_Get_FIFO_Count() {
     uint8 i[2];
-    EI2C_Mem_Read(&MPU6050_I2C_Struct, MPU6050_ADDR, 0x72, i, 2);
+    EI2C_Mem_Read(&_MPU6050_I2C_Struct, MPU6050_ADDR, 0x72, i, 2);
 //    OLED_Printf(5,45,6,"%d",i[0]);
 //    OLED_Printf(5,55,6,"%d",i[1]);
 //    OLED_Update();
@@ -454,25 +454,25 @@ void _DMP_Init() {
 void _MPU6050_Data_Init() {
     // Initialize DMP data
     for (int i = 0; i < 3; i++) {
-        theta[i] = 0;
-        omega[i] = 0;
-        accel[i] = 0;
+        _imu_theta[i] = 0;
+        _imu_omega[i] = 0;
+        _imu_accel[i] = 0;
 
-        theta_offset[i] = 0;
-        omega_offset[i] = 0;
-        accel_offset[i] = 0;
+        _imu_theta_offset[i] = 0;
+        _imu_omega_offset[i] = 0;
+        _imu_accel_offset[i] = 0;
     }
 }
 
 void MPU6050_Init() {
     //port configuration
-    MPU6050_I2C_Struct.scl_port = I2C_SCL_I2C_PIN.pin.port;
-    MPU6050_I2C_Struct.scl_pin = I2C_SCL_I2C_PIN.pin.pinIndex;
+    _MPU6050_I2C_Struct.scl_port = I2C_SCL_I2C_PIN.pin.port;
+    _MPU6050_I2C_Struct.scl_pin = I2C_SCL_I2C_PIN.pin.pinIndex;
 
-    MPU6050_I2C_Struct.sda_port = I2C_SDA_I2C_PIN.pin.port;
-    MPU6050_I2C_Struct.sda_pin = I2C_SDA_I2C_PIN.pin.pinIndex;
+    _MPU6050_I2C_Struct.sda_port = I2C_SDA_I2C_PIN.pin.port;
+    _MPU6050_I2C_Struct.sda_pin = I2C_SDA_I2C_PIN.pin.pinIndex;
 
-    MPU6050_I2C_Struct.status = EI2C_NOT_READY;
+    _MPU6050_I2C_Struct.status = EI2C_NOT_READY;
 
     // uint8 data;
 
@@ -502,15 +502,15 @@ EI2C_Status MPU6050_Read_Accel() {
     uint8 Rec_Data[6];
     sint16 Accel_X_RAW, Accel_Y_RAW, Accel_Z_RAW;
 
-    retVal = EI2C_Mem_Read(&MPU6050_I2C_Struct, MPU6050_ADDR, ACCEL_XOUT_H_REG, Rec_Data, 6);
+    retVal = EI2C_Mem_Read(&_MPU6050_I2C_Struct, MPU6050_ADDR, ACCEL_XOUT_H_REG, Rec_Data, 6);
     if (retVal == EI2C_OK) {
         Accel_X_RAW = (sint16) ((uint16) Rec_Data[0] << 8 | Rec_Data[1]);
         Accel_Y_RAW = (sint16) ((uint16) Rec_Data[2] << 8 | Rec_Data[3]);
         Accel_Z_RAW = (sint16) ((uint16) Rec_Data[4] << 8 | Rec_Data[5]);
 
-        accel[0] = Accel_X_RAW * 9.81 / 16384.0 - accel_offset[0];
-        accel[1] = Accel_Y_RAW * 9.81 / 16384.0 - accel_offset[1];
-        accel[2] = Accel_Z_RAW * 9.81 / 16384.0 - accel_offset[2];
+        _imu_accel[0] = Accel_X_RAW * 9.81 / 16384.0 - _imu_accel_offset[0];
+        _imu_accel[1] = Accel_Y_RAW * 9.81 / 16384.0 - _imu_accel_offset[1];
+        _imu_accel[2] = Accel_Z_RAW * 9.81 / 16384.0 - _imu_accel_offset[2];
     }
     return retVal;
 }
@@ -520,15 +520,15 @@ EI2C_Status MPU6050_Read_Gyro() {
     uint8 Rec_Data[6];
     sint16 Gyro_X_RAW, Gyro_Y_RAW, Gyro_Z_RAW;
 
-    retVal = EI2C_Mem_Read(&MPU6050_I2C_Struct, MPU6050_ADDR, GYRO_XOUT_H_REG, Rec_Data, 6);
+    retVal = EI2C_Mem_Read(&_MPU6050_I2C_Struct, MPU6050_ADDR, GYRO_XOUT_H_REG, Rec_Data, 6);
     if (retVal == EI2C_OK) {
         Gyro_X_RAW = (sint16) ((uint16) Rec_Data[0] << 8 | Rec_Data[1]);
         Gyro_Y_RAW = (sint16) ((uint16) Rec_Data[2] << 8 | Rec_Data[3]);
         Gyro_Z_RAW = (sint16) ((uint16) Rec_Data[4] << 8 | Rec_Data[5]);
 
-        omega[0] = Gyro_X_RAW / 131.0 - omega_offset[0];
-        omega[1] = Gyro_Y_RAW / 131.0 - omega_offset[1];
-        omega[2] = Gyro_Z_RAW / 131.0 - omega_offset[2];
+        _imu_omega[0] = Gyro_X_RAW / 131.0 - _imu_omega_offset[0];
+        _imu_omega[1] = Gyro_Y_RAW / 131.0 - _imu_omega_offset[1];
+        _imu_omega[2] = Gyro_Z_RAW / 131.0 - _imu_omega_offset[2];
     }
     return retVal;
 }
@@ -541,13 +541,13 @@ void _MPU6050_Smooth_Theta() {
     static double theta_last[3] = {0, 0, 0};
     static int theta_state[3] = {0, 0, 0};
     for (int i = 0; i < 3; i++) {
-        if (theta_last[i] > 145.0 && theta[i] < -145.0) {
+        if (theta_last[i] > 145.0 && _imu_theta[i] < -145.0) {
             theta_state[i]++;
-        } else if (theta_last[i] < -145.0 && theta[i] > 145.0) {
+        } else if (theta_last[i] < -145.0 && _imu_theta[i] > 145.0) {
             theta_state[i]--;
         }
-        theta[i] += theta_state[i] * 360.0;
-        theta_last[i] = theta[i];
+        _imu_theta[i] += theta_state[i] * 360.0;
+        theta_last[i] = _imu_theta[i];
     }
 }
 
@@ -578,15 +578,15 @@ EI2C_Status MPU6050_Read_Theta() {
         double q3 = (double)(((sint16)dmpData[12] << 8) | dmpData[13])/ 16384.0;
 
         // Convert quaternion to Euler angles (theta)
-        theta[0] = atan2(2.0 * (q1 * q2 + q0 * q3),
+        _imu_theta[0] = atan2(2.0 * (q1 * q2 + q0 * q3),
                         1 - 2.0 * (q2 * q2 + q3 * q3)) * 57.3;
         double sinp = 2.0 * (q0 * q2 - q3 * q1);
         if (sinp >= 1)
             sinp = 1;
         else if (sinp <= -1)
             sinp = -1;
-        theta[1] = asin(sinp) * 57.3;
-        theta[2] = atan2(2.0 * (q0 * q1 + q2 * q3),
+        _imu_theta[1] = asin(sinp) * 57.3;
+        _imu_theta[2] = atan2(2.0 * (q0 * q1 + q2 * q3),
                         1 - 2.0 * (q1 * q1 + q2 * q2)) * 57.3;
     }
     _MPU6050_Smooth_Theta(); // Smooth theta values
@@ -594,37 +594,37 @@ EI2C_Status MPU6050_Read_Theta() {
 }
 
 void MPU6050_Get_Accel(double *accelX, double *accelY, double *accelZ) {
-    *accelX = accel[0];
-    *accelY = accel[1];
-    *accelZ = accel[2];
+    *accelX = _imu_accel[0];
+    *accelY = _imu_accel[1];
+    *accelZ = _imu_accel[2];
 }
 
 void MPU6050_Get_Omega(double *omegaX, double *omegaY, double *omegaZ) {
-    *omegaX = omega[0];
-    *omegaY = omega[1];
-    *omegaZ = omega[2];
+    *omegaX = _imu_omega[0];
+    *omegaY = _imu_omega[1];
+    *omegaZ = _imu_omega[2];
 }
 
 void MPU6050_Get_Theta(double *thetaX, double *thetaY, double *thetaZ) {
-    *thetaX = theta[0] - theta_offset[0];
-    *thetaY = theta[1] - theta_offset[1];
-    *thetaZ = theta[2] - theta_offset[2];
+    *thetaX = _imu_theta[0] - _imu_theta_offset[0];
+    *thetaY = _imu_theta[1] - _imu_theta_offset[1];
+    *thetaZ = _imu_theta[2] - _imu_theta_offset[2];
 }
 
 void MPU6050_Set_AccelOffset() {
-    accel_offset[0] = accel[0];
-    accel_offset[1] = accel[1];
-    accel_offset[2] = accel[2];
+    _imu_accel_offset[0] = _imu_accel[0];
+    _imu_accel_offset[1] = _imu_accel[1];
+    _imu_accel_offset[2] = _imu_accel[2];
 }
 
 void MPU6050_Set_OmegaOffset() {
-    omega_offset[0] = omega[0];
-    omega_offset[1] = omega[1];
-    omega_offset[2] = omega[2];
+    _imu_omega_offset[0] = _imu_omega[0];
+    _imu_omega_offset[1] = _imu_omega[1];
+    _imu_omega_offset[2] = _imu_omega[2];
 }
 
 void MPU6050_Set_ThetaOffset() {
-    theta_offset[0] = theta[0];
-    theta_offset[1] = theta[1];
-    theta_offset[2] = theta[2];
+    _imu_theta_offset[0] = _imu_theta[0];
+    _imu_theta_offset[1] = _imu_theta[1];
+    _imu_theta_offset[2] = _imu_theta[2];
 }

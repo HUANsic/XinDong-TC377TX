@@ -2,9 +2,9 @@
 #include "Interrupts.h"
 #include "IfxGtm_Tom_Timer.h"
 
-uint32 elapsed_ms;
+uint32 _elapsed_ms;
 
-IfxGtm_Tom_Timer clock;
+IfxGtm_Tom_Timer _clock;
 
 void _GTM_Clocks_Init(void) {
 	uint32 dummy;
@@ -28,7 +28,7 @@ void _GTM_Clocks_Init(void) {
 }
 
 void Time_Start(void) {
-	elapsed_ms = 0;
+	_elapsed_ms = 0;
 
 	// initialize GTM clock sources first
 	_GTM_Clocks_Init();
@@ -44,17 +44,17 @@ void Time_Start(void) {
 	tomConfig.timerChannel = IfxGtm_Tom_Ch_0;
 	tomConfig.initPins = FALSE;		// no output please (does nothing)
 
-	IfxGtm_Tom_Timer_init(&clock, &tomConfig);
-	IfxGtm_Tom_Timer_run(&clock);
+	IfxGtm_Tom_Timer_init(&_clock, &tomConfig);
+	IfxGtm_Tom_Timer_run(&_clock);
 }
 
 uint32 Time_GetTime(void) {
-	return elapsed_ms;
+	return _elapsed_ms;
 }
 
 void Time_Delay(uint32 duration) {
-	uint32 startTime = elapsed_ms;
-	while (elapsed_ms - startTime < duration)
+	uint32 startTime = _elapsed_ms;
+	while (_elapsed_ms - startTime < duration)
 		// avoid overflow bug
 		__asm("NOP");
 	// poll
@@ -82,16 +82,16 @@ void Time_Delay_us(uint32 duration) {
 }
 
 void Time_Periodic_ISR(void) {
-	elapsed_ms += 1;
-	IfxGtm_Tom_Timer_acknowledgeTimerIrq(&clock);
+	_elapsed_ms += 1;
+	IfxGtm_Tom_Timer_acknowledgeTimerIrq(&_clock);
 
 	// run user ISR
-	if (elapsed_ms % 10 == 0)
+	if (_elapsed_ms % 10 == 0)
 		SWINT_Trigger_10ms();
-	if (elapsed_ms % PID_PERIOD_MS == 0)
+	if (_elapsed_ms % PID_PERIOD_MS == 0)
 		SWINT_Trigger_pid();
-	if (elapsed_ms % 100 == 0)
+	if (_elapsed_ms % 100 == 0)
 		SWINT_Trigger_100ms();
-	if (elapsed_ms % 1000 == 0)
+	if (_elapsed_ms % 1000 == 0)
 		SWINT_Trigger_1s();
 }
