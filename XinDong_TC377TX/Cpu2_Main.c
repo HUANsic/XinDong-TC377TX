@@ -87,8 +87,8 @@ void core2_main(void) {
 	// set demo step size
 	increment = range1 / 10;
 	// prepare display
-	OLED_ShowString(0, 0, startMsg, OLED_8X16);
-	OLED_Update();
+	// OLED_ShowString(0, 0, startMsg, OLED_8X16);
+	// OLED_Update();
 	Time_Delay(1000);
 
 	// main loop
