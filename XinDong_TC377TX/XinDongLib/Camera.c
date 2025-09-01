@@ -27,6 +27,19 @@ void* Camera_GetLatest(void) {
         return 0;
     _occupied_img_ptr = _latest_img_ptr;
     _latest_img_ptr = 0;
+
+    for (uint8 i = 0; i < CAM_IMAGE_HEIGHT; i++) {
+        for (uint8 j = 0; j < CAM_IMAGE_WIDTH; j++) {
+            uint8 first = (uint8)(_occupied_img_ptr[2*i][j] >> 8);
+            uint8 second = (uint8)_occupied_img_ptr[2*i][j];
+            uint8 r = (second) >> 3;
+            uint8 g = (((second) & 0x07) << 3) + (((first) & 0xE0) >> 5);
+            uint8 b = ((first) & 0x1F);
+            uint8 gray = (r * 38 + g * 75 + b * 15) >> 5;
+            _occupied_img_ptr[2*i][j] = gray;
+        }
+    }
+
     return _occupied_img_ptr;
 }
 
@@ -41,7 +54,6 @@ void* Camera_Release(uint16 (*img_ptr)[CAM_IMAGE_WIDTH]) {
 }
 
 void* _Camera_Image_Received(void) {
-//    IfxPort_togglePin(IO_LED4_PORT, IO_LED4_PIN);
     uint16 (*temp_ptr)[CAM_IMAGE_WIDTH] = _writing_img_ptr;
     // if there is a buffer occupied, then there is only one buffer available
     if (_occupied_img_ptr != 0) {
@@ -1935,8 +1947,8 @@ uint8 Camera_Init(void) {
     ret |= _atk_mc2640_set_output_size(CAM_IMAGE_WIDTH, CAM_IMAGE_HEIGHT);         /* 输出图像分辨率 */
     ret |= _atk_mc2640_set_image_window(100, 0, CAM_IMAGE_WIDTH * 8, CAM_IMAGE_HEIGHT * 8);
     ret |= _atk_mc2640_set_divider(2, 2);
-    ret |= _atk_mc2640_set_sensor_window(200, 0, CAM_IMAGE_WIDTH * 8, CAM_IMAGE_HEIGHT * 8);
-    ret |= _atk_mc2640_set_flip(1, 0);
+//    ret |= _atk_mc2640_set_sensor_window(200, 0, CAM_IMAGE_WIDTH * 8, CAM_IMAGE_HEIGHT * 8);
+    ret |= _atk_mc2640_set_flip(1, 1);
     if (ret != 0) {
         return 0;
         // printf("ATK-MC2640 Init Failed!\r\n");
@@ -1945,11 +1957,12 @@ uint8 Camera_Init(void) {
 //        }
     }
     _atk_mc2640_set_output_speed(0, 15);                                     /* 输出速率 */
-    _atk_mc2640_set_light_mode(ATK_MC2640_LIGHT_MODE_SUNNY);                 /* 设置灯光模式 */
-    _atk_mc2640_set_color_saturation(ATK_MC2640_COLOR_SATURATION_1);         /* 设置色彩饱和度 */
-    _atk_mc2640_set_brightness(ATK_MC2640_BRIGHTNESS_1);                     /* 设置亮度 */
+    _atk_mc2640_set_light_mode(ATK_MC2640_LIGHT_MODE_OFFICE);                 /* 设置灯光模式 */
+    _atk_mc2640_set_color_saturation(ATK_MC2640_COLOR_SATURATION_0);         /* 设置色彩饱和度 */
+    _atk_mc2640_set_brightness(ATK_MC2640_BRIGHTNESS_2);                     /* 设置亮度 */
     _atk_mc2640_set_contrast(ATK_MC2640_CONTRAST_2);                         /* 设置对比度 */
     _atk_mc2640_set_special_effect(ATK_MC2640_SPECIAL_EFFECT_NORMAL);        /* 设置特殊效果 */
+    _atk_mc2640_set_special_effect(ATK_MC2640_SPECIAL_EFFECT_BW);        /* 设置特殊效果 */
 
 
     IfxCpu_disableInterrupts();
