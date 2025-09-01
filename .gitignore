@@ -11,7 +11,9 @@
 *.launch
 */CCL_Reports/*
 */.ads/*
+language.settings.xml
 # */makefile # include this if it appears outside /TriCore Debug/
 # ignore all folders/files starting with test and temp
 test*
 temp*
+.DS_Store

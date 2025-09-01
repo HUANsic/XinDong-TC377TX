@@ -1,4 +1,9 @@
 #include "Encoder.h"
+#include "Interrupts.h"
+#include "IfxGpt12.h"
+#include "IfxSrc.h"
+#include "IfxCpu.h"
+#include "IfxPort.h"
 
 #define ENCODER_MAX_COUNT     0xFFFF
 #define ENCODER_T2_SRC        &SRC_GPT120T2
@@ -9,7 +14,7 @@ volatile sint32 encoderCount = 0;
 
 
 void Encoder_Overflow_ISR(void) {
-    boolean dir = IfxPort_getPinState(ENCODER_B_PORT, ENCODER_B_PIN);
+    boolean dir = IfxPort_getPinState(ENCODER_B_GPT12_PIN.pin.port, ENCODER_B_GPT12_PIN.pin.pinIndex);
     if (dir)
         encoderCount -= ENCODER_MAX_COUNT + 1;
     else
