@@ -1,4 +1,9 @@
 #include "Encoder.h"
+#include "Interrupts.h"
+#include "IfxGpt12.h"
+#include "IfxSrc.h"
+#include "IfxCpu.h"
+#include "IfxPort.h"
 
 #define ENCODER_MAX_COUNT     0xFFFF
 #define ENCODER_T2_SRC        &SRC_GPT120T2

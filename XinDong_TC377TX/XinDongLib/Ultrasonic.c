@@ -1,4 +1,9 @@
 #include "Ultrasonic.h"
+#include "Interrupts.h"
+#include "Time.h"
+#include "IfxGtm_Tim_In.h"
+#include "IfxGtm_regdef.h"
+#include "IfxSrc_reg.h"
 
 
 #define SOUND_SPEED_MM_US 0.343

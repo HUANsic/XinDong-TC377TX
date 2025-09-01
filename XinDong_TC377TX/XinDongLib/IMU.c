@@ -2,6 +2,7 @@
 #include "IfxI2c_PinMap.h"
 #include "Display.h"
 #include "Time.h"
+#include <math.h>
 
 #define MPU6050_OMEGA_INT_THRESHOLD 0.03
 
