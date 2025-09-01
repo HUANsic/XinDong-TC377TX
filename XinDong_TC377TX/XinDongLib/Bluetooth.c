@@ -54,6 +54,7 @@ void Bluetooth_Init() {
 
 	/* Initialize AT pin */
 	IfxPort_setPinMode(BLE_AT_PORT, BLE_AT_PIN, IfxPort_Mode_outputPushPullGeneral);
+	IfxPort_setPinState(BLE_AT_PORT, BLE_AT_PIN, IfxPort_State_high);
 }
 
 uint8 Bluetooth_Transmit(uint8 *dataptr, Ifx_SizeT length) {
