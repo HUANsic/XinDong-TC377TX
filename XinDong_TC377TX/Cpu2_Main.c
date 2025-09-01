@@ -80,51 +80,11 @@ void core2_main(void) {
 	while (Intercore_ReadyToGo() == 0)
 		;
 
-	// start ADC conversion
-	ADC_Start();
-	// set servo software center
-	Servo_SetCenter(0);
-	// set demo step size
-	increment = range1 / 10;
-	// prepare display
-	OLED_ShowString(0, 0, startMsg, OLED_8X16);
-	OLED_Update();
-	Time_Delay(1000);
-
 	// main loop
 	while (1) {
 		// some code to indicate that the core is not dead
 		IO_LED_Toggle(3);
 		Time_Delay_us(100000);
-
-		// update state
-		state = (IO_DIP_Read(2) ? 2 : 0) + (IO_DIP_Read(1) ? 1 : 0);
-		// depending on state, perform corresponding task
-		switch (state) {
-		case 0:
-			// center mode
-			output = center1;
-			Servo_Set(output);
-			break;
-		case 1:
-			// sweep mode
-			output += increment;
-			if (output >= range1 || output <= -range1)
-				increment *= -1;
-			Servo_Set(output);
-			break;
-		case 2:
-			// follow mode
-		case 3:
-			// follow mode
-			ADC_Read();
-			output = (ADC_GetVoltage(0) / 3.3 * 2 - 1) * range1;
-			Servo_Set(output);
-			ADC_Start();
-			break;
-		default:
-			break;
-		}
 	}
 }
 
