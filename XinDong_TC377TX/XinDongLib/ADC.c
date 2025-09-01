@@ -11,7 +11,7 @@
 static IfxEvadc_Adc         g_evadc;                                   /* EVADC module handle variable                     */
 static IfxEvadc_Adc_Group   g_adcGroup;                                /* EVADC group handle variable                      */
 static IfxEvadc_Adc_Channel g_adcChannel[3];                           /* EVADC channel handle variable                    */
-static Ifx_EVADC_G_RES      g_result[3];                               /* Variable to store measurement results            */
+static Ifx_EVADC_G_RES      g_adc_result[3];                               /* Variable to store measurement results            */
 /*********************************************************************************************************************/
 /*---------------------------------------------Function Implementations----------------------------------------------*/
 /*********************************************************************************************************************/
@@ -116,7 +116,7 @@ void ADC_Read(void)
         } while(!conversionResult.B.VF);
 
         /* Store result */
-        g_result[i] = conversionResult;
+        g_adc_result[i] = conversionResult;
     }
 }
 /**
@@ -145,7 +145,7 @@ float ADC_GetVoltage(uint8 channelIndex)
     }
 
     // Retrieve the raw conversion result from the internal buffer
-    Ifx_EVADC_G_RES rawResult = g_result[channelIndex];
+    Ifx_EVADC_G_RES rawResult = g_adc_result[channelIndex];
 
     // Check if the raw result is valid (Valid Flag [VF] must be set to 1)
     if (rawResult.B.VF != 1)
