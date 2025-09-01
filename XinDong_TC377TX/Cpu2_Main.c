@@ -62,12 +62,17 @@ void core2_main(void) {
 		;
 
 	// initialize any module needed
+	Serial_Init();
+	Bluetooth_Init();
 	ADC_Init();
 	Ultrasonic_Init();
+	OLED_Init();
+	MPU6050_Init();
 	Encoder_Init();
 	Servo_Init();
 	Motor_Init();
 	PID_Init(0.1, 0.0, 0.0);
+
 	// wait for other cores to finish initialization
 	Intercore_CPU2_Ready();
 	while (Intercore_ReadyToGo() == 0)
