@@ -50,6 +50,7 @@ void core0_main(void) {
 
 	// initialize timer
 	Intercore_Init();
+	Time_Start();
 	IO_Init();
 	Interrupts_Init();
 
@@ -60,7 +61,6 @@ void core0_main(void) {
 	Intercore_AllowInitialize();
 
 	// initialize other modules
-	Time_Start();
 
 	// wait for other cores to finish initialization
 	Intercore_CPU0_Ready();
