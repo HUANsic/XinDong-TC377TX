@@ -22,7 +22,7 @@ void Intercore_CPU2_Ready(void) {
 }
 
 uint8 Intercore_InitAllowed(void) {
-	_battery_connected = IfxPort_getPinState(IO_BATT_PORT, IO_BATT_PIN);
+	Intercore_Checkpoint();
 	return (_initAllowed && _battery_connected);
 }
 
