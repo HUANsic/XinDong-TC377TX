@@ -221,13 +221,13 @@ void* Camera_GetLatest(void) {
 
     for (uint8 i = 0; i < CAM_IMAGE_HEIGHT; i++) {
         for (uint8 j = 0; j < CAM_IMAGE_WIDTH; j++) {
-            uint8 second = (uint8)(_occupied_img_ptr[2*i][j] >> 8);
-            uint8 first = (uint8)_occupied_img_ptr[2*i][j];
+            uint8 second = (uint8)(_occupied_img_ptr[i][j] >> 8);
+            uint8 first = (uint8)_occupied_img_ptr[i][j];
             uint8 r = (second) >> 3;
             uint8 g = (((second) & 0x07) << 3) + (((first) & 0xE0) >> 5);
             uint8 b = ((first) & 0x1F);
             uint8 gray = (r * 38 + g * 75 + b * 15) >> 5;
-            _occupied_img_ptr[2*i][j] = gray;
+            _occupied_img_ptr[i][j] = gray;
         }
     }
 
