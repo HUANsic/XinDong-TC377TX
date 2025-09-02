@@ -45,7 +45,7 @@
 
 extern IfxCpu_syncEvent g_cpuSyncEvent;
 
-float center1 = 0, range1 = 0.33, output = 0, increment = 0.1;
+float center = 0, range = 0.33, output = 0, increment = 0.1;
 uint8 state = 0;
 
 char startMsg[] = "Servo Example";
@@ -84,6 +84,17 @@ void core2_main(void) {
 	while (Intercore_ReadyToGo() == 0)
 		;
 
+	// start ADC conversion
+	ADC_Start();
+	// set servo software center
+	Servo_SetCenter(0);
+	// set demo step size
+	increment = range / 10;
+	// prepare display
+	OLED_ShowString(0, 0, startMsg, OLED_8X16);
+	OLED_Update();
+	Time_Delay(1000);
+
 	// main loop
 	while (1) {
 		// some code to indicate that the core is not dead
@@ -94,33 +105,29 @@ void core2_main(void) {
 		state = (IO_DIP_Read(2) ? 2 : 0) + (IO_DIP_Read(1) ? 1 : 0);
 		// depending on state, perform corresponding task
 		switch (state) {
-		case 0:
-			// center mode
-			output = center1;
+		case 0: // center mode
+			output = center;
 			Servo_Set(output);
 			break;
-		case 1:
-			// sweep mode
+		case 1:// sweep mode
 			output += increment;
-			if (output >= range1 || output <= -range1)
+			if (output >= range || output <= -range)
 				increment *= -1;
 			Servo_Set(output);
 			break;
-		case 2:
-			// follow mode
-		case 3:
-			// follow mode
-			ADC_Read();
-			output = (ADC_GetVoltage(0) / 3.3 * 2 - 1) * range1;
+		case 2:// follow mode
+		case 3:// follow mode
+			// calculate output position from potentiometer
+			output = (ADC_GetVoltage(0) / 3.3 * 2 - 1) * range;
+			// set output
 			Servo_Set(output);
-			ADC_Start();
 			break;
 		default:
 			break;
 		}
 
-		// print the number onto display
-		angleMsgLen = (uint8)sprintf(angleMsg, "Output=%0.3f ", output);
+		// print output onto display
+		angleMsgLen = (uint8) sprintf(angleMsg, "Output=%0.3f ", output);
 		OLED_ShowString(16, 32, angleMsg, OLED_8X16);
 		OLED_Update();
 	}
@@ -137,7 +144,10 @@ void Periodic_100ms_ISR(void) {
 }
 
 void Periodic_10ms_ISR(void) {
-	;
+	// read ADC result
+	ADC_Read();
+	// start next conversion
+	ADC_Start();
 }
 
 void Periodic_PID_ISR(void) {
