@@ -59,11 +59,6 @@ static float current_speed = SPEED_NORMAL;  // Current speed
 
 extern IfxCpu_syncEvent g_cpuSyncEvent;
 
-float center1 = 0, range1 = 0.33, output = 0, increment = 0.1;
-uint8 state = 0;
-
-char startMsg[] = "Hello";
-
 void core2_main(void) {
 	IfxCpu_enableInterrupts();
 	/* !!WATCHDOG2 IS DISABLED HERE!!
