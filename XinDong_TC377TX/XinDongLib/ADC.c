@@ -106,16 +106,11 @@ void ADC_Start(void)
 void ADC_Read(void)
 {
     int i;
-    for (i=0 ; i<3 ; ++i)
+    for (i = 0; i < 3; ++i)
     {
-        Ifx_EVADC_G_RES conversionResult;
-        /* Wait for valid result */
-        do
-        {
-            conversionResult = IfxEvadc_Adc_getResult(&g_adcChannel[i]); /* Read the result of the channel */
-        } while(!conversionResult.B.VF);
+        // 直接读取结果寄存器
+        Ifx_EVADC_G_RES conversionResult = IfxEvadc_Adc_getResult(&g_adcChannel[i]);
 
-        /* Store result */
         g_adc_result[i] = conversionResult;
     }
 }
