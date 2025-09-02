@@ -41,12 +41,16 @@
 #include "XinDongLib/Time.h"
 #include "XinDongLib/ADC.h"
 
+#include <stdio.h>
+
 extern IfxCpu_syncEvent g_cpuSyncEvent;
 
 float center1 = 0, range1 = 0.33, output = 0, increment = 0.1;
 uint8 state = 0;
 
-char startMsg[] = "Hello";
+char startMsg[] = "Servo Example";
+char angleMsg[30];
+uint8 angleMsgLen;
 
 void core2_main(void) {
 	IfxCpu_enableInterrupts();
@@ -87,8 +91,8 @@ void core2_main(void) {
 	// set demo step size
 	increment = range1 / 10;
 	// prepare display
-	// OLED_ShowString(0, 0, startMsg, OLED_8X16);
-	// OLED_Update();
+	OLED_ShowString(0, 0, startMsg, OLED_8X16);
+	OLED_Update();
 	Time_Delay(1000);
 
 	// main loop
@@ -125,6 +129,11 @@ void core2_main(void) {
 		default:
 			break;
 		}
+
+		// print the number onto display
+		angleMsgLen = (uint8)sprintf(angleMsg, "Output=%0.3f ", output);
+		OLED_ShowString(16, 32, angleMsg, OLED_8X16);
+		OLED_Update();
 	}
 }
 

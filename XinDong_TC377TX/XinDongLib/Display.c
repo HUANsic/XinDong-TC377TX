@@ -640,7 +640,7 @@ void _OLED_GPIO_Init(void)
     OLED_I2C_Struct.sda_port = I2C_SDA_I2C_PIN.pin.port;
     OLED_I2C_Struct.sda_pin = I2C_SDA_I2C_PIN.pin.pinIndex;
 
-    OLED_I2C_Struct.status = EI2C_NOT_READY;
+    OLED_I2C_Struct.status = EI2C_OK;
     /*I2C初始化*/
     EI2C_Init(&OLED_I2C_Struct);
 }
