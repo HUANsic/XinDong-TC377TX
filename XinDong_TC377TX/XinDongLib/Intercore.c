@@ -21,13 +21,13 @@ void Intercore_CPU2_Ready(void) {
 	_cpu2_ready = 1;
 }
 
-uint8 Intercore_InitAllowed(void) {
-	_battery_connected = IfxPort_getPinState(IO_BATT_PORT, IO_BATT_PIN);
-	return (_initAllowed && _battery_connected);
-}
-
 void Intercore_Checkpoint(void) {
 	_battery_connected = IfxPort_getPinState(IO_BATT_PORT, IO_BATT_PIN);
+}
+
+uint8 Intercore_InitAllowed(void) {
+	Intercore_Checkpoint();
+	return (_initAllowed && _battery_connected);
 }
 
 void Intercore_AllowInitialize(void) {

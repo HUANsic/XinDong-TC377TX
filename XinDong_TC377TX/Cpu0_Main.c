@@ -53,6 +53,7 @@ void core0_main(void) {
 
     // initialize other modules
 	Intercore_Init();
+	Time_Start();
 	IO_Init();
 	Interrupts_Init();
 
