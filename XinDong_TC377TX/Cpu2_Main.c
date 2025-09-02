@@ -44,7 +44,7 @@
 extern IfxCpu_syncEvent g_cpuSyncEvent;
 
 void core2_main(void) {
-    IfxCpu_enableInterrupts();
+	IfxCpu_enableInterrupts();
 	/* !!WATCHDOG2 IS DISABLED HERE!!
 	 * Enable the watchdog and service it periodically if it is required
 	 */
@@ -59,18 +59,23 @@ void core2_main(void) {
 		;
 
 	// initialize any module needed
+	Serial_Init();
+	Bluetooth_Init();
 	ADC_Init();
 	Ultrasonic_Init();
+	OLED_Init();
+	MPU6050_Init();
 	Encoder_Init();
 	Servo_Init();
 	Motor_Init();
 	PID_Init(0.1, 0.0, 0.0);
+
 	// wait for other cores to finish initialization
 	Intercore_CPU2_Ready();
 	while (Intercore_ReadyToGo() == 0)
 		;
 
-
+	// main loop
 	while (1) {
 		// some code to indicate that the core is not dead
 		IO_LED_Toggle(3);

@@ -49,13 +49,13 @@ void core0_main(void) {
 	IfxCpu_waitEvent(&g_cpuSyncEvent, 1);
 
 	// initialize timer
+	Intercore_Init();
 	Time_Start();
-	Interrupts_Init();
 	IO_Init();
-
-	// if battery balancing connector not connected
+	Interrupts_Init();
 
 	// then set one of the LED and wait until it is connected
+	IO_LED_On(0);
 
 	// allow initialization of other cores
 	Intercore_AllowInitialize();
@@ -64,10 +64,10 @@ void core0_main(void) {
 
 	// wait for other cores to finish initialization
 	Intercore_CPU0_Ready();
-
 	while (Intercore_ReadyToGo() == 0)
 		;
 
+	// main loop
 	while (1) {
 		// some code to indicate that the core is not dead
 		IO_LED_Toggle(1);

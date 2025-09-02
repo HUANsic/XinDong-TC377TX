@@ -20,9 +20,9 @@ struct PID {
     float last_error;
     float kp, ki, kd;
     float integral;
-} pid;
+} _pid;
 
-float center = 0, range = 1;
+float _center = 0, _range = 1;
 
 
 void Servo_Init(){
@@ -47,13 +47,13 @@ void Servo_Init(){
 
 void Servo_Set(float angle){
     angle = (angle > 1) ? 1 : ((angle < -1) ? -1 : angle);
-    angle = 1.5 + center + angle * range;
+    angle = 1.5 + _center + angle * _range;
     IfxGtm_Tom_Ch_setCompareOneShadow(&MODULE_GTM.TOM[SERVO_TOM_PIN.tom], SERVO_TOM_PIN.channel,
             (uint16) (SERVO_1MS_COUNT * angle));
 }
 
 void Servo_SetCenter(float angle){
-    center = angle;
+    _center = angle;
     return;
 }
 
@@ -112,32 +112,32 @@ void Motor_Set(float power) {
 }
 
 void PID_Init(float kp, float ki, float kd) {
-    pid.target_speed = 0.0;
-    pid.current_speed = 0.0;
-    pid.error = 0.0;
-    pid.last_error = 0.0;
-    pid.integral = 0.0;
+    _pid.target_speed = 0.0;
+    _pid.current_speed = 0.0;
+    _pid.error = 0.0;
+    _pid.last_error = 0.0;
+    _pid.integral = 0.0;
 
-    pid.kp = kp;
-    pid.ki = ki;
-    pid.kd = kd;
+    _pid.kp = kp;
+    _pid.ki = ki;
+    _pid.kd = kd;
 }
 
 void PID_SetParams(float kp, float ki, float kd) {
-    pid.kp = kp;
-    pid.ki = ki;
-    pid.kd = kd;
+    _pid.kp = kp;
+    _pid.ki = ki;
+    _pid.kd = kd;
 }
 
 float PID_Output(float target_speed, float current_speed) {
-    pid.target_speed = target_speed;
-    pid.current_speed = current_speed;
+    _pid.target_speed = target_speed;
+    _pid.current_speed = current_speed;
 
-    pid.error = pid.target_speed - pid.current_speed;
-    pid.integral += pid.error;
+    _pid.error = _pid.target_speed - _pid.current_speed;
+    _pid.integral += _pid.error;
 
-    float output = pid.kp * pid.error + pid.ki * pid.integral + pid.kd * (pid.error - pid.last_error);
+    float output = _pid.kp * _pid.error + _pid.ki * _pid.integral + _pid.kd * (_pid.error - _pid.last_error);
 
-    pid.last_error = pid.error;
+    _pid.last_error = _pid.error;
     return output;
 }

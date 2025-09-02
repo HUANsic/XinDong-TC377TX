@@ -6,15 +6,6 @@
 #include <stdio.h>
 #include <stdarg.h>
 
-/*FontSize参数取值*/
-/*此参数值不仅用于判断，而且用于计算横向字符偏移，默认值为字体像素宽度*/
-#define OLED_8X16				8
-#define OLED_6X8				6
-
-/*IsFilled参数数值*/
-#define OLED_UNFILLED			0
-#define OLED_FILLED				1
-
 #define OLED_I2C_ADDRESS        0x78	//I2C地址
 
 /*中文字符字节宽度*/
