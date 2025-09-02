@@ -1,4 +1,9 @@
 #include "Ultrasonic.h"
+#include "Interrupts.h"
+#include "Time.h"
+#include "IfxGtm_Tim_In.h"
+#include "IfxGtm_regdef.h"
+#include "IfxSrc_reg.h"
 
 
 #define SOUND_SPEED_MM_US 0.343
@@ -6,8 +11,8 @@
 
 IfxGtm_Tim_In timDriver_pulseIn;
 
-volatile uint32     ultrasonicDistance = 0;
-volatile uint8      ultrasonicReady = 0;
+volatile uint32     _ultrasonicDistance = 0;
+volatile uint8      _ultrasonicReady = 0;
 
 
 void Ultrasonic_PulseIn_ISR(void)
@@ -22,15 +27,15 @@ void Ultrasonic_PulseIn_ISR(void)
 
     // deal with data
     if (cnt > 5000){
-        ultrasonicReady = 1;
-        ultrasonicDistance = -1;
+        _ultrasonicReady = 1;
+        _ultrasonicDistance = -1;
     }
     else {
-        ultrasonicReady = 1;
+        _ultrasonicReady = 1;
         // find length in millimeters
-        ultrasonicDistance = cnt;
-        ultrasonicDistance *= 340000 / 2;
-        ultrasonicDistance /= timDriver_pulseIn.captureClockFrequency;
+        _ultrasonicDistance = cnt;
+        _ultrasonicDistance *= 340000 / 2;
+        _ultrasonicDistance /= timDriver_pulseIn.captureClockFrequency;
     }
 }
 
@@ -75,9 +80,9 @@ void Ultrasonic_Trigger() {
 }
 
 uint32 Ultrasonic_GetValue(){
-    return ultrasonicDistance;
+    return _ultrasonicDistance;
 }
 
 uint8 Ultrasonic_IsReady(){
-    return ultrasonicReady;
+    return _ultrasonicReady;
 }

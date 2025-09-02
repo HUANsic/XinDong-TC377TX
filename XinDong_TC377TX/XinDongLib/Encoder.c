@@ -1,19 +1,24 @@
 #include "Encoder.h"
+#include "Interrupts.h"
+#include "IfxGpt12.h"
+#include "IfxSrc.h"
+#include "IfxCpu.h"
+#include "IfxPort.h"
 
 #define ENCODER_MAX_COUNT     0xFFFF
 #define ENCODER_T2_SRC        &SRC_GPT120T2
 #define ENCODER_REVERSE       TRUE
 
 
-volatile sint32 encoderCount = 0;
+volatile sint32 _encoderCount = 0;
 
 
 void Encoder_Overflow_ISR(void) {
-    boolean dir = IfxPort_getPinState(ENCODER_B_PORT, ENCODER_B_PIN);
+    boolean dir = IfxPort_getPinState(ENCODER_B_GPT12_PIN.pin.port, ENCODER_B_GPT12_PIN.pin.pinIndex);
     if (dir)
-        encoderCount -= ENCODER_MAX_COUNT + 1;
+        _encoderCount -= ENCODER_MAX_COUNT + 1;
     else
-        encoderCount += ENCODER_MAX_COUNT + 1;
+        _encoderCount += ENCODER_MAX_COUNT + 1;
 
     IfxSrc_clearRequest(ENCODER_T2_SRC);
 }
@@ -39,7 +44,7 @@ void Encoder_Init() {
 
     IfxGpt12_T2_run(&MODULE_GPT120, IfxGpt12_TimerRun_start);
 
-    encoderCount = 0;
+    _encoderCount = 0;
 }
 
 sint32 Encoder_GetValue()
@@ -47,7 +52,7 @@ sint32 Encoder_GetValue()
     uint16 raw = IfxGpt12_T2_getTimerValue(&MODULE_GPT120);
     sint32 total;
 
-    total = encoderCount + raw;
+    total = _encoderCount + raw;
 
     return ENCODER_REVERSE ? -total : total;
 }

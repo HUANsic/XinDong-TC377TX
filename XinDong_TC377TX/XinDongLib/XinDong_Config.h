@@ -17,13 +17,9 @@
 // reed switch: P15.8
 #define		REED_TIM_PIN			IfxGtm_TIM1_2_P15_8_IN
 #define		REED_EXTI_PIN			IfxScu_REQ5A_P15_8_IN
-#define		REED_PORT				&MODULE_P15
-#define		REED_PIN				8
 
 // ultrasonic: echo-P21.5, trig-P21.6
 #define		ULTRA_ECHO_TIM_PIN		IfxGtm_TIM0_3_P21_5_IN
-#define		ULTRA_ECHO_PORT			&MODULE_P21
-#define		ULTRA_ECHO_PIN			5
 #define		ULTRA_TRIG_PORT			&MODULE_P21
 #define		ULTRA_TRIG_PIN			6
 
@@ -67,32 +63,18 @@
 
 // servo: P33.4
 #define		SERVO_TOM_PIN			IfxGtm_TOM0_0_TOUT26_P33_4_OUT
-#define		SERVO_PORT				&MODULE_P33
-#define		SERVO_PIN				4
 
 // motor: OUTA-P21.3, OUTB-P21.2
 #define		MOTOR_OUTA_TOM_PIN		IfxGtm_TOM2_1_TOUT54_P21_3_OUT
-#define		MOTOR_OUTA_PORT			&MODULE_P21
-#define		MOTOR_OUTA_PIN			3
 #define		MOTOR_OUTB_TOM_PIN		IfxGtm_TOM2_0_TOUT53_P21_2_OUT
-#define		MOTOR_OUTB_PORT			&MODULE_P21
-#define		MOTOR_OUTB_PIN			2
 
 // encoder: A-P33.7, B-P33.6
 #define		ENCODER_A_GPT12_PIN		IfxGpt120_T2INB_P33_7_IN
-#define		ENCODER_A_PORT			&MODULE_P33
-#define		ENCODER_A_PIN			7
 #define		ENCODER_B_GPT12_PIN		IfxGpt120_T2EUDB_P33_6_IN
-#define		ENCODER_B_PORT			&MODULE_P33
-#define		ENCODER_B_PIN			6
 
 // oled and imu: SCL-P13.1, SDA-P13.2
 #define		I2C_SCL_I2C_PIN			IfxI2c0_SCL_P13_1_INOUT
-#define		I2C_SCL_PORT			&MODULE_P13
-#define		I2C_SCL_PIN				1
 #define		I2C_SDA_I2C_PIN			IfxI2c0_SDA_P13_2_INOUT
-#define		I2C_SDA_PORT			&MODULE_P13
-#define		I2C_SDA_PIN				2
 #define		MPU_AD0_PORT			&MODULE_P13
 #define		MPU_AD0_PIN				0
 
