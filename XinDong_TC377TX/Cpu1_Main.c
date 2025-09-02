@@ -33,8 +33,12 @@
 #include "XinDongLib/CV.h"
 #include "XinDongLib/IO.h"
 #include "XinDongLib/Time.h"
+#include "XindongLib/Bluetooth.h"
+#include "XindongLib/Serial.h"
+#include "XinDongLib/Display.h"
 
 extern IfxCpu_syncEvent g_cpuSyncEvent;
+uint8 header[] = {0xFF};
 
 void core1_main(void) {
     IfxCpu_enableInterrupts();
@@ -53,6 +57,10 @@ void core1_main(void) {
 
 	// initialize camera module
 	Camera_Init();
+	OLED_Init();
+	OLED_ShowString(0, 0, "wow", OLED_8X16);
+	OLED_ShowNum(0, 0, 1, 1, OLED_8X16);
+	OLED_Update();
 
 	// wait for other cores to finish initialization
 	Intercore_CPU1_Ready();
@@ -62,8 +70,36 @@ void core1_main(void) {
 	// main loop
 	while (1) {
 		// some code to indicate that the core is not dead
-		IO_LED_Toggle(2);
+		IO_LED_On(2);
 		Time_Delay_us(100000);
+        IO_LED_Off(2);
+
+        // Get camera image
+        uint16 (*ptr)[CAM_IMAGE_WIDTH] = Camera_GetLatest();
+        if(ptr){
+            // Send image header
+            while(Bluetooth_Transmit(header, 1));
+            while(Serial_Transmit(header, 1));
+
+            // Send image pixel by pixel
+            for(int i = 0;i < CAM_IMAGE_HEIGHT;++i){
+                for(int j = 0;j < CAM_IMAGE_WIDTH;++j){
+                    uint8 gray = (uint8)ptr[i][j];
+                    // Avoid conflict between pixel and header
+                    if (gray == 0xFF){
+                        gray = 0xFE;
+                    }
+                    // You can choose one beneath
+                    // Send image with bluetooth
+                    while(Bluetooth_Transmit(&gray, 1));
+                    // Send image with serial
+                    while(Serial_Transmit(&gray, 1));
+                }
+            }
+            // Release the image
+            Camera_Release(ptr);
+        }
+//        Time_Delay_us(2e6);
 	}
 }
 

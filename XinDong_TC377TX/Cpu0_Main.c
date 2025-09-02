@@ -49,6 +49,9 @@ void core0_main(void) {
 	IfxCpu_waitEvent(&g_cpuSyncEvent, 1);
 
 	// initialize timer
+    Time_Start();
+
+    // initialize other modules
 	Intercore_Init();
 	IO_Init();
 	Interrupts_Init();
@@ -60,7 +63,6 @@ void core0_main(void) {
 	Intercore_AllowInitialize();
 
 	// initialize other modules
-	Time_Start();
 
 	// wait for other cores to finish initialization
 	Intercore_CPU0_Ready();
