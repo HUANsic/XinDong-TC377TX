@@ -120,9 +120,9 @@ void SWINT_User3_ISR(void) {
 void Serial_Received(uint8 *dataptr, uint32 length, uint8 tag) {
 	switch (tag) {
 	case 1:
-	    while(Serial_Transmit(dataptr, (sint16)length));
 		break;
 	default:
+	    while(Serial_Transmit(dataptr, (sint16)length));
 		;
 	}
 }
