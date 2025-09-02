@@ -70,8 +70,8 @@ void core0_main(void) {
 	// main loop
 	while (1) {
 		// some code to indicate that the core is not dead
-		IO_LED_Toggle(1);
-		Time_Delay_us(100000);
+//		IO_LED_Toggle(1);
+//		Time_Delay_us(100000);
 	}
 }
 

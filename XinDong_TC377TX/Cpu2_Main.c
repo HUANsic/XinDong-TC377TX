@@ -78,8 +78,8 @@ void core2_main(void) {
 	// main loop
 	while (1) {
 		// some code to indicate that the core is not dead
-		IO_LED_Toggle(3);
-		Time_Delay_us(100000);
+//		IO_LED_Toggle(3);
+//		Time_Delay_us(100000);
 	}
 }
 
@@ -90,7 +90,16 @@ void Periodic_1s_ISR(void) {
 }
 
 void Periodic_100ms_ISR(void) {
-	;
+    // toggle LED3
+    IO_LED_Toggle(3);
+
+    // get current time
+    uint32 currentTime = Time_GetTime();
+
+    // show number on the OLED screen
+    OLED_ShowNum(0, 0, currentTime, 8, OLED_6X8);
+    // update the OLED screen
+    OLED_Update();
 }
 
 void Periodic_10ms_ISR(void) {
