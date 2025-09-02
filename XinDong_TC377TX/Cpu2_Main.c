@@ -77,9 +77,16 @@ void core2_main(void) {
 
 	// main loop
 	while (1) {
-		// some code to indicate that the core is not dead
-		IO_LED_Toggle(3);
-		Time_Delay_us(100000);
+	    // judge if the ultrasonic is ready
+	    if(Ultrasonic_IsReady()){
+	        // get current distance in mm
+	        uint32 distance =  Ultrasonic_GetValue();
+
+	        // show number on the OLED screen
+	        OLED_ShowNum(0, 0, distance, 5, OLED_6X8);
+	        // update the OLED screen
+	        OLED_Update();
+	    }
 	}
 }
 
@@ -90,7 +97,10 @@ void Periodic_1s_ISR(void) {
 }
 
 void Periodic_100ms_ISR(void) {
-	;
+    // toggle the LED3
+    IO_LED_Toggle(3);
+    // trigger the ultrasonic
+    Ultrasonic_Trigger();
 }
 
 void Periodic_10ms_ISR(void) {
