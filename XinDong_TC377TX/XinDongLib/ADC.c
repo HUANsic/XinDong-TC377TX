@@ -108,9 +108,10 @@ void ADC_Read(void)
     int i;
     for (i = 0; i < 3; ++i)
     {
-        // 直接读取结果寄存器
+        // read directly
         Ifx_EVADC_G_RES conversionResult = IfxEvadc_Adc_getResult(&g_adcChannel[i]);
 
+        // save latest results
         g_adc_result[i] = conversionResult;
     }
 }
