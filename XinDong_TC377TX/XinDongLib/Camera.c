@@ -221,13 +221,13 @@ void* Camera_GetLatest(void) {
 
     for (uint8 i = 0; i < CAM_IMAGE_HEIGHT; i++) {
         for (uint8 j = 0; j < CAM_IMAGE_WIDTH; j++) {
-            uint8 second = (uint8)(_occupied_img_ptr[2*i][j] >> 8);
-            uint8 first = (uint8)_occupied_img_ptr[2*i][j];
+            uint8 second = (uint8)(_occupied_img_ptr[i][j] >> 8);
+            uint8 first = (uint8)_occupied_img_ptr[i][j];
             uint8 r = (second) >> 3;
             uint8 g = (((second) & 0x07) << 3) + (((first) & 0xE0) >> 5);
             uint8 b = ((first) & 0x1F);
             uint8 gray = (r * 38 + g * 75 + b * 15) >> 5;
-            _occupied_img_ptr[2*i][j] = gray;
+            _occupied_img_ptr[i][j] = gray;
         }
     }
 
@@ -247,31 +247,29 @@ void* Camera_Release(uint16 (*img_ptr)[CAM_IMAGE_WIDTH]) {
 void* _Camera_Image_Received(void) {
     uint16 (*temp_ptr)[CAM_IMAGE_WIDTH] = _writing_img_ptr;
     // if there is a buffer occupied, then there is only one buffer available
-    if (_occupied_img_ptr != 0) {
-        if (_occupied_img_ptr == g_Image1) {
-            if (_writing_img_ptr == g_Image2)
-                _writing_img_ptr = g_Image3;
-            else
-                _writing_img_ptr = g_Image2;
-        } else if (_occupied_img_ptr == g_Image2) {
-            if (_writing_img_ptr == g_Image1)
-                _writing_img_ptr = g_Image3;
-            else
-                _writing_img_ptr = g_Image1;
-        } else if (_occupied_img_ptr == g_Image3) {
-            if (_writing_img_ptr == g_Image1)
-                _writing_img_ptr = g_Image2;
-            else
-                _writing_img_ptr = g_Image1;
-        } else {        // no image is occupied
-            if (_writing_img_ptr == g_Image1)
-                _writing_img_ptr = g_Image2;
-            else if (_writing_img_ptr == g_Image2)
-                _writing_img_ptr = g_Image3;
-            else if (_writing_img_ptr == g_Image3)
-                _writing_img_ptr = g_Image1;
-        }
-    }
+	if (_occupied_img_ptr == g_Image1) {
+		if (_writing_img_ptr == g_Image2)
+			_writing_img_ptr = g_Image3;
+		else
+			_writing_img_ptr = g_Image2;
+	} else if (_occupied_img_ptr == g_Image2) {
+		if (_writing_img_ptr == g_Image1)
+			_writing_img_ptr = g_Image3;
+		else
+			_writing_img_ptr = g_Image1;
+	} else if (_occupied_img_ptr == g_Image3) {
+		if (_writing_img_ptr == g_Image1)
+			_writing_img_ptr = g_Image2;
+		else
+			_writing_img_ptr = g_Image1;
+	} else {        // no image is occupied
+		if (_writing_img_ptr == g_Image1)
+			_writing_img_ptr = g_Image2;
+		else if (_writing_img_ptr == g_Image2)
+			_writing_img_ptr = g_Image3;
+		else if (_writing_img_ptr == g_Image3)
+			_writing_img_ptr = g_Image1;
+	}
     // assign the latest image pointer
     _latest_img_ptr = temp_ptr;
     // and return the writing pointer
