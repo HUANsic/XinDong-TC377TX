@@ -11,7 +11,7 @@
 static IfxEvadc_Adc         g_evadc;                                   /* EVADC module handle variable                     */
 static IfxEvadc_Adc_Group   g_adcGroup;                                /* EVADC group handle variable                      */
 static IfxEvadc_Adc_Channel g_adcChannel[3];                           /* EVADC channel handle variable                    */
-static Ifx_EVADC_G_RES      g_result[3];                               /* Variable to store measurement results            */
+static Ifx_EVADC_G_RES      g_adc_result[3];                               /* Variable to store measurement results            */
 /*********************************************************************************************************************/
 /*---------------------------------------------Function Implementations----------------------------------------------*/
 /*********************************************************************************************************************/
@@ -36,9 +36,9 @@ void _ADC_InitEVADCGroup(void)
     IfxEvadc_Adc_initGroupConfig(&adcGroupConfig, &g_evadc);
 
     /* Setting user configuration using group 0 */
-    adcGroupConfig.groupId = _ADC_AN10_PIN.groupId;
+    adcGroupConfig.groupId = POT1_VADC_PIN.groupId;
 
-    adcGroupConfig.master = _ADC_AN10_PIN.groupId;
+    adcGroupConfig.master = POT1_VADC_PIN.groupId;
 
     /* Enable queued source */
     adcGroupConfig.arbiter.requestSlotQueue0Enabled = TRUE;
@@ -61,22 +61,22 @@ void _ADC_InitEVADCChannels(void)
     IfxEvadc_Adc_initChannelConfig(&adcChannelConfig, &g_adcGroup);
 
     /* Select the channel ID and the respective result register */
-    adcChannelConfig.channelId = _ADC_AN10_PIN.channelId;
-    adcChannelConfig.resultRegister = (IfxEvadc_ChannelResult)(_ADC_AN10_PIN.channelId);
+    adcChannelConfig.channelId = POT1_VADC_PIN.channelId;
+    adcChannelConfig.resultRegister = (IfxEvadc_ChannelResult)(POT1_VADC_PIN.channelId);
 
     /* Initialize the channel */
     IfxEvadc_Adc_initChannel(&g_adcChannel[0], &adcChannelConfig);
 
     // Channel AN11
     IfxEvadc_Adc_initChannelConfig(&adcChannelConfig, &g_adcGroup);
-    adcChannelConfig.channelId = _ADC_AN11_PIN.channelId;
-    adcChannelConfig.resultRegister = (IfxEvadc_ChannelResult)(_ADC_AN11_PIN.channelId);
+    adcChannelConfig.channelId = POT2_VADC_PIN.channelId;
+    adcChannelConfig.resultRegister = (IfxEvadc_ChannelResult)(POT2_VADC_PIN.channelId);
     IfxEvadc_Adc_initChannel(&g_adcChannel[1], &adcChannelConfig);
 
     // Channel AN12
     IfxEvadc_Adc_initChannelConfig(&adcChannelConfig, &g_adcGroup);
-    adcChannelConfig.channelId = _ADC_AN12_PIN.channelId;
-    adcChannelConfig.resultRegister = (IfxEvadc_ChannelResult)(_ADC_AN12_PIN.channelId);
+    adcChannelConfig.channelId = POT3_VADC_PIN.channelId;
+    adcChannelConfig.resultRegister = (IfxEvadc_ChannelResult)(POT3_VADC_PIN.channelId);
     IfxEvadc_Adc_initChannel(&g_adcChannel[2], &adcChannelConfig);
 }
 
@@ -116,7 +116,7 @@ void ADC_Read(void)
         } while(!conversionResult.B.VF);
 
         /* Store result */
-        g_result[i] = conversionResult;
+        g_adc_result[i] = conversionResult;
     }
 }
 /**
@@ -132,11 +132,11 @@ void ADC_Read(void)
  *             - The conversion result is invalid (Valid Flag [VF] not set)
  * @note Must call _ADC_ReadEVADC() prior to this function to ensure the latest conversion results are available.
  */
-float ADC_GetVoltage(uint8_t channelIndex)
+float ADC_GetVoltage(uint8 channelIndex)
 {
     // Define ADC reference parameters: 3.3V reference voltage and 12-bit resolution (0-4095)
     const float referenceVoltage = 3.3f;  // ADC reference voltage (3.3V)
-    const uint32_t adcResolution = 4095;  // Maximum raw value for 12-bit ADC (2^12 - 1)
+    const uint32 adcResolution = 4095;  // Maximum raw value for 12-bit ADC (2^12 - 1)
 
     // Validate channel index (only 0, 1, or 2 are allowed)
     if (channelIndex >= 3)
@@ -145,7 +145,7 @@ float ADC_GetVoltage(uint8_t channelIndex)
     }
 
     // Retrieve the raw conversion result from the internal buffer
-    Ifx_EVADC_G_RES rawResult = g_result[channelIndex];
+    Ifx_EVADC_G_RES rawResult = g_adc_result[channelIndex];
 
     // Check if the raw result is valid (Valid Flag [VF] must be set to 1)
     if (rawResult.B.VF != 1)

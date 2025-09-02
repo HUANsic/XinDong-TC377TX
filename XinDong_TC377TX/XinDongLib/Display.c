@@ -1,8 +1,22 @@
 #include "Display.h"
+#include "EI2C.h"
+#include "IfxI2c_PinMap.h"
 #include <string.h>
 #include <math.h>
 #include <stdio.h>
 #include <stdarg.h>
+
+#define OLED_I2C_ADDRESS        0x78	//I2C地址
+
+/*中文字符字节宽度*/
+#define OLED_CHN_CHAR_WIDTH         3       //UTF-8编码格式给3，GB2312编码格式给2
+
+/*字模基本单元*/
+typedef struct
+{
+    uint8 Data[32];                     //字模数据
+    char Index[OLED_CHN_CHAR_WIDTH + 1];    //汉字索引
+} ChineseCell_t;
 
 EI2C_Typedef OLED_I2C_Struct;   //I2C结构体
 
@@ -620,11 +634,11 @@ uint8 OLED_DisplayBuf[8][128];
 void _OLED_GPIO_Init(void)
 {
     /*I2C初始化*/
-    OLED_I2C_Struct.scl_port = I2C_SCL_PORT;
-    OLED_I2C_Struct.scl_pin = I2C_SCL_PIN;
+    OLED_I2C_Struct.scl_port = I2C_SCL_I2C_PIN.pin.port;
+    OLED_I2C_Struct.scl_pin = I2C_SCL_I2C_PIN.pin.pinIndex;
 
-    OLED_I2C_Struct.sda_port = I2C_SDA_PORT;
-    OLED_I2C_Struct.sda_pin = I2C_SDA_PIN;
+    OLED_I2C_Struct.sda_port = I2C_SDA_I2C_PIN.pin.port;
+    OLED_I2C_Struct.sda_pin = I2C_SDA_I2C_PIN.pin.pinIndex;
 
     OLED_I2C_Struct.status = EI2C_NOT_READY;
     /*I2C初始化*/
