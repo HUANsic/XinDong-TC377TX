@@ -50,7 +50,6 @@ uint8 state = 0;
 
 char startMsg[] = "Servo Example";
 char angleMsg[30];
-uint8 angleMsgLen;
 
 void core2_main(void) {
 	IfxCpu_enableInterrupts();
@@ -127,7 +126,7 @@ void core2_main(void) {
 		}
 
 		// print output onto display
-		angleMsgLen = (uint8) sprintf(angleMsg, "Output=%0.3f ", output);
+		sprintf(angleMsg, "Output=%0.3f ", output);
 		OLED_ShowString(16, 32, angleMsg, OLED_8X16);
 		OLED_Update();
 	}
