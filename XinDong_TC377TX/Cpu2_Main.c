@@ -83,8 +83,6 @@ void core2_main(void) {
 	while (Intercore_ReadyToGo() == 0)
 		;
 
-	// start ADC conversion
-	ADC_Start();
 	// set servo software center
 	Servo_SetCenter(0);
 	// set demo step size
