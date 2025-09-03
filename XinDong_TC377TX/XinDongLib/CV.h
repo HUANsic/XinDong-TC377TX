@@ -44,36 +44,36 @@ typedef struct {
 /*********************************************************************************************************************/
 /*------------------------------------------------Function Prototypes------------------------------------------------*/
 /*********************************************************************************************************************/
-// 图像预处理：转换为二值化掩码
-void CV_PreprocessImage(uint16 (*input_img)[CV_IMAGE_HEIGHT][CV_IMAGE_WIDTH], 
-                       uint16 (*mask)[CV_IMAGE_HEIGHT][CV_IMAGE_WIDTH]);
+// 图像预处理：转换为二值化掩码（输入/掩码一维展开）
+void CV_PreprocessImage(uint16 *input_img, 
+                       uint16 *mask);
 
-// 检查指定区域是否全为黑色
-uint16 CV_IsRegionEmpty(uint16 (*mask)[CV_IMAGE_HEIGHT][CV_IMAGE_WIDTH], 
+// 检查指定区域是否全为黑色（掩码一维展开）
+uint16 CV_IsRegionEmpty(uint16 *mask, 
                       uint16 y, uint16 start_x, uint16 end_x);
 
-// 计算指定区域的平均位置
-uint16 CV_CalculateAveragePosition(uint16 (*mask)[CV_IMAGE_HEIGHT][CV_IMAGE_WIDTH], 
+// 计算指定区域的平均位置（掩码一维展开）
+uint16 CV_CalculateAveragePosition(uint16 *mask, 
                                   uint16 y, uint16 start_x, uint16 end_x);
 
-// 中线检测主函数
-CV_Result_t CV_DetectMidline(uint16 (*input_img)[CV_IMAGE_HEIGHT][CV_IMAGE_WIDTH]);
+// 中线检测主函数（输入一维展开）
+CV_Result_t CV_DetectMidline(uint16 *input_img);
 
-// 计算图像中线的偏差
-sint16 CV_CalculateMidlineError(uint16 (*input_img)[CV_IMAGE_HEIGHT][CV_IMAGE_WIDTH], 
-                              uint16 (*mask)[CV_IMAGE_HEIGHT][CV_IMAGE_WIDTH]);
+// 计算图像中线的偏差（输入/掩码一维展开）
+sint16 CV_CalculateMidlineError(uint16 *input_img, 
+                              uint16 *mask);
 
-// 图像处理主函数
+// 图像处理主函数（返回 image_data 为一维展开首地址）
 CV_Result_t CV_ProcessImage(void);
 
-// 获取中线左右两侧的颜色值
-void CV_GetMidlineSideColors(uint16 (*input_img)[CV_IMAGE_HEIGHT][CV_IMAGE_WIDTH], 
+// 获取中线左右两侧的颜色值（输入一维展开）
+void CV_GetMidlineSideColors(uint16 *input_img, 
                             uint16 y_position, uint16 left_range, uint16 right_range,
                             uint16* left_color, uint16* right_color);
 
-// 获取动态中线左右两侧的颜色值（基于检测到的中线位置）
-void CV_GetDynamicMidlineSideColors(uint16 (*input_img)[CV_IMAGE_HEIGHT][CV_IMAGE_WIDTH], 
-                                   uint16 (*mask)[CV_IMAGE_HEIGHT][CV_IMAGE_WIDTH],
+// 获取动态中线左右两侧的颜色值（基于检测到的中线位置，输入/掩码一维展开）
+void CV_GetDynamicMidlineSideColors(uint16 *input_img, 
+                                   uint16 *mask,
                                    uint16 y_position, uint16 left_range, uint16 right_range,
                                    uint16* left_color, uint16* right_color, uint16* midline_x);
 

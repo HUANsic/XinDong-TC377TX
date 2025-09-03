@@ -22,7 +22,7 @@ struct PID {
     float integral;
 } _pid;
 
-float _center = 0, _range = 1;
+float _center = 0, _range = 0.33;
 
 
 void Servo_Init(){
@@ -47,7 +47,7 @@ void Servo_Init(){
 
 void Servo_Set(float angle){
     angle = (angle > 1) ? 1 : ((angle < -1) ? -1 : angle);
-    angle = 1.5 + _center + angle * _range;
+    angle = 1.5 + (_center + angle) * _range;
     IfxGtm_Tom_Ch_setCompareOneShadow(&MODULE_GTM.TOM[SERVO_TOM_PIN.tom], SERVO_TOM_PIN.channel,
             (uint16) (SERVO_1MS_COUNT * angle));
 }
