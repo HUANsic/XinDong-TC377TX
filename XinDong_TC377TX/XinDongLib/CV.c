@@ -78,7 +78,7 @@ uint16 CV_CalculateAveragePosition(uint16 *mask,
 // 计算图像中线的偏差（优化版本，直接在原图上处理）- 一维展开
 sint16 CV_CalculateMidlineError(uint16 *input_img, 
                               uint16 *mask) {
-    uint16 y;
+    sint16 y;
     uint16 half_width = CV_IMAGE_WIDTH / 2;
     uint16 half = half_width;  // 从下往上扫描赛道，最下端取图片中线为分割线
     uint16 left, right, mid;
@@ -178,7 +178,6 @@ CV_Result_t CV_ProcessImage(void) {
     if (img_ptr != NULL) {
         // 进行中线检测
         result = CV_DetectMidline(img_ptr);
-        
         // 释放图像缓冲区 - 确保在任何情况下都释放（显式转换以避免不同类型指针告警）
         Camera_Release((uint16 (*)[CAM_IMAGE_WIDTH])img_ptr);
     } else {
@@ -194,7 +193,8 @@ CV_Result_t CV_ProcessImage(void) {
 // ================== 行/列投影法 ==================
 // 统计每一行的白色像素数量，结果存入row_proj，长度为CV_IMAGE_HEIGHT
 void CV_RowProjection(uint16 *mask, uint16 row_proj[CV_IMAGE_HEIGHT]) {
-    uint16 y, x, count;
+    uint16 y, x;
+    uint16 count;
     for (y = 0; y < CV_IMAGE_HEIGHT; y++) {
         count = 0;
         for (x = 0; x < CV_IMAGE_WIDTH; x++) {
@@ -208,7 +208,8 @@ void CV_RowProjection(uint16 *mask, uint16 row_proj[CV_IMAGE_HEIGHT]) {
 
 // 统计每一列的白色像素数量，结果存入col_proj，长度为CV_IMAGE_WIDTH
 void CV_ColProjection(uint16 *mask, uint16 col_proj[CV_IMAGE_WIDTH]) {
-    uint16 y, x, count;
+    uint16 y, x;
+    uint16 count;
     for (x = 0; x < CV_IMAGE_WIDTH; x++) {
         count = 0;
         for (y = 0; y < CV_IMAGE_HEIGHT; y++) {
@@ -304,8 +305,8 @@ float CV_CalcMidlineSlopeAngle(uint16 *mask, const uint16* rows, uint16 num_rows
         mid_x[i] = CV_CalculateAveragePosition(mask, rows[i], 0, CV_IMAGE_WIDTH);
     }
     // 用首尾两点拟合直线，计算斜率
-    int dy = rows[num_rows-1] - rows[0];
-    int dx = (int)mid_x[num_rows-1] - (int)mid_x[0];
+    uint16 dy = rows[num_rows-1] - rows[0];
+    uint16 dx = mid_x[num_rows-1] - mid_x[0];
     float slope = (dy != 0) ? ((float)dx / (float)dy) : 0.0f;
     if (out_slope) *out_slope = slope;
     // 角度 = atan(斜率) * 180 / pi
@@ -487,6 +488,7 @@ void CV_GetMidlineSideColors(uint16 *input_img,
 // left_color: 输出左侧平均颜色值
 // right_color: 输出右侧平均颜色值
 // midline_x: 输出检测到的中线X坐标
+
 void CV_GetDynamicMidlineSideColors(uint16 *input_img, 
                                    uint16 *mask,
                                    uint16 y_position, uint16 left_range, uint16 right_range,
