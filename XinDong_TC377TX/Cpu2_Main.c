@@ -45,7 +45,7 @@
 
 extern IfxCpu_syncEvent g_cpuSyncEvent;
 
-float range = 0.33, output = 0, increment = 0.1, direction = 1;
+float output = 0, increment = 0.1, direction = 1;
 uint8 state = 0;
 
 char startMsg[] = "Servo Example";
@@ -85,8 +85,6 @@ void core2_main(void) {
 
 	// set servo software center
 	Servo_SetCenter(0);
-	// set demo step size
-	increment = range / 10;
 	// prepare display
 	OLED_ShowString(0, 0, startMsg, OLED_8X16);
 	OLED_Update();
@@ -107,13 +105,13 @@ void core2_main(void) {
 			break;
 		case 1: // sweep mode
 			output += increment * direction;
-			if (output > range - increment || output < -range + increment)
+			if (output > 1 - increment || output < -1 + increment)
 				direction *= -1;
 			break;
 		case 2: // follow mode
 		case 3: // follow mode
 				// calculate output position from potentiometer
-			output = (ADC_GetVoltage(0) / 3.3 * 2 - 1) * range;
+			output = ADC_GetVoltage(0) / 3.3 * 2 - 1;
 			break;
 		default:
 			break;
