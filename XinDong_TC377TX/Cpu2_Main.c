@@ -40,6 +40,7 @@
 #include "XinDongLib/Ultrasonic.h"
 #include "XinDongLib/Time.h"
 #include "XinDongLib/ADC.h"
+#include "XinDongLib/RemoteControl.h"
 
 extern IfxCpu_syncEvent g_cpuSyncEvent;
 
@@ -68,6 +69,10 @@ void core2_main(void) {
 	Encoder_Init();
 	Servo_Init();
 	Motor_Init();
+
+	// initialize remote control
+	RemoteControl_Init();
+
 	PID_Init(0.1, 0.0, 0.0);
 
 	// wait for other cores to finish initialization
@@ -133,6 +138,9 @@ void Bluetooth_Received(uint8 *dataptr, uint32 length, uint8 tag) {
 
 		break;
 	default:
-		;
+	    // load data into remote controller
+        RemoteControl_Load(dataptr, (uint16)length);
+        // detect package in the cache and apply changes
+        RemoteControl_Detect();
 	}
 }
