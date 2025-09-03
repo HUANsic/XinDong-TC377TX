@@ -45,7 +45,7 @@
 
 extern IfxCpu_syncEvent g_cpuSyncEvent;
 
-float center = 0, range = 0.33, output = 0, increment = 0.1;
+float range = 0.33, output = 0, increment = 0.1, direction = 1;
 uint8 state = 0;
 
 char startMsg[] = "Servo Example";
@@ -96,20 +96,20 @@ void core2_main(void) {
 	while (1) {
 		// some code to indicate that the core is not dead
 		IO_LED_Toggle(3);
-		Time_Delay_us(100000);
+		Time_Delay_us(300000);
 
 		// update state
 		state = (IO_DIP_Read(2) ? 2 : 0) + (IO_DIP_Read(1) ? 1 : 0);
 		// depending on state, perform corresponding task
 		switch (state) {
 		case 0: // center mode
-			output = center;
+			output = 0;
 			Servo_Set(output);
 			break;
 		case 1:// sweep mode
-			output += increment;
-			if (output >= range || output <= -range)
-				increment *= -1;
+			output += increment * direction;
+			if (output > range - increment || output < -range + increment)
+				direction *= -1;
 			Servo_Set(output);
 			break;
 		case 2:// follow mode

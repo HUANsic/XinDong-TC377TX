@@ -17,8 +17,8 @@
 /*------------------------------------------------------Macros-------------------------------------------------------*/
 /*********************************************************************************************************************/
 // Interrupt Priorities
-#define     ENCODER_OVERFLOW_PRIORITY		1
-#define     ULTRASONIC_PULSEIN_PRIORITY		2
+#define     ENCODER_OVERFLOW_PRIORITY		8
+#define     ULTRASONIC_PULSEIN_PRIORITY		9
 
 #define     TIME_PERIODIC_PRIORITY			30
 
