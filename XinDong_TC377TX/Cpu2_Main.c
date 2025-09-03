@@ -96,7 +96,7 @@ void core2_main(void) {
 	while (1) {
 		// some code to indicate that the core is not dead
 		IO_LED_Toggle(3);
-		Time_Delay_us(300000);
+		Time_Delay_us(100000);
 
 		// update state
 		state = (IO_DIP_Read(2) ? 2 : 0) + (IO_DIP_Read(1) ? 1 : 0);
@@ -104,25 +104,23 @@ void core2_main(void) {
 		switch (state) {
 		case 0: // center mode
 			output = 0;
-			Servo_Set(output);
 			break;
-		case 1:// sweep mode
+		case 1: // sweep mode
 			output += increment * direction;
 			if (output > range - increment || output < -range + increment)
 				direction *= -1;
-			Servo_Set(output);
 			break;
-		case 2:// follow mode
-		case 3:// follow mode
-			// calculate output position from potentiometer
+		case 2: // follow mode
+		case 3: // follow mode
+				// calculate output position from potentiometer
 			output = (ADC_GetVoltage(0) / 3.3 * 2 - 1) * range;
-			// set output
-			Servo_Set(output);
 			break;
 		default:
 			break;
 		}
 
+		// set output
+		Servo_Set(output);
 		// print output onto display
 		sprintf(angleMsg, "Output=%0.3f ", output);
 		OLED_ShowString(16, 32, angleMsg, OLED_8X16);
