@@ -22,7 +22,7 @@ struct PID {
     float integral;
 } _pid;
 
-float _center = 0, _range = 1;
+float _center = 0, _range = 0.33;
 
 
 void Servo_Init(){
