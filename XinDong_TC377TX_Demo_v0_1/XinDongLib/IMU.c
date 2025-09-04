@@ -445,6 +445,7 @@ void _DMP_Init() {
 
     _MPU6050_Write_Bit(0x6A,2,1);   //复位 FIFO
     _MPU6050_Write_Bit(0x6A,7,1);   //使能 DMP
+    _MPU6050_Write_Bit(0x6A,6,1);   //使能 FIFO
     return;
 
 }
@@ -485,7 +486,7 @@ void MPU6050_Init() {
     // EI2C_Mem_Write(&MPU6050_I2C_Struct, MPU6050_ADDR, GYRO_CONFIG_REG, &data, 1);
 
     _MPU6050_Write_Bits(0x6B, 2, 3, 0x01); // Set clock source to Z Gyro
-    _MPU6050_Write_Bits(0x1B, 4, 2, 0x00); // Set gyro sensitivity to ±2000 deg/sec
+    // _MPU6050_Write_Bits(0x1B, 4, 2, 0x00); // Set gyro sensitivity to ±2000 deg/sec
     _MPU6050_Write_Bits(0x1C, 4, 2, 0x00); // Set accelerometer sensitivity to ±2g
     _MPU6050_Write_Bit(0x6B, 6, 1);
 
@@ -549,10 +550,52 @@ void _MPU6050_Smooth_Theta() {
     }
 }
 
+double _atan2_redef(double y, double x)
+{
+	float base=0;
+	if(fabs(x)<1e-5)//��ܳ������
+	{
+		if(y>1e-5)
+		{
+			return 90.0;
+		}
+		else if(y<-1e-5)
+		{
+			return -90.0;
+		}
+		else
+		{
+			return 0;
+		}
+	}
+	base=atan(y/x)*57.3;//ת��Ϊ�Ƕ�ֵ
+	if(x>0.0)//�������������Ƕ�
+	{
+		return base;
+	}
+	else
+	{
+		if(y>=0.0)
+		{
+			return base+180.0;
+		}
+		else
+		{
+			return base-180.0;
+		}
+	}
+}
+
 EI2C_Status MPU6050_Read_Theta() {
+   _MPU6050_Write_Bit(0x6A,2,1);   //复位 FIFO
+
+    while(_MPU6050_Get_FIFO_Count() < 3);  //等待 FIFO 计数 > 2
+
     EI2C_Status retVal = EI2C_OK;
     uint8 zd;
     uint32 i = _MPU6050_Get_FIFO_Count();
+    OLED_Clear();
+    OLED_Printf(5,15,6,"%d",i);
     retVal = _MPU6050_Read(0x3A, 1, &zd); // Read interrupt status
     if (retVal != EI2C_OK) {
         return retVal;
@@ -576,18 +619,18 @@ EI2C_Status MPU6050_Read_Theta() {
         double q3 = (double)(((sint16)dmpData[12] << 8) | dmpData[13])/ 16384.0;
 
         // Convert quaternion to Euler angles (theta)
-        theta[0] = atan2(2.0 * (q1 * q2 + q0 * q3),
-                        1 - 2.0 * (q2 * q2 + q3 * q3)) * 57.3;
+        theta[0] = _atan2_redef(2.0 * (q1 * q2 + q0 * q3),
+                        (1 - 2.0 * (q2 * q2 + q3 * q3)));
         double sinp = 2.0 * (q0 * q2 - q3 * q1);
         if (sinp >= 1)
             sinp = 1;
         else if (sinp <= -1)
             sinp = -1;
         theta[1] = asin(sinp) * 57.3;
-        theta[2] = atan2(2.0 * (q0 * q1 + q2 * q3),
-                        1 - 2.0 * (q1 * q1 + q2 * q2)) * 57.3;
+        theta[2] = _atan2_redef(2.0 * (q0 * q1 + q2 * q3),
+                        1 - 2.0 * (q1 * q1 + q2 * q2)) ;
     }
-    _MPU6050_Smooth_Theta(); // Smooth theta values
+//    _MPU6050_Smooth_Theta(); // Smooth theta values
     return retVal;
 }
 

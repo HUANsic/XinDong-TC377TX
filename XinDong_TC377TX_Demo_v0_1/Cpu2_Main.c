@@ -85,11 +85,11 @@ void core2_main(void) {
 //
 //    MPU6050_Read_Accel();
 //    MPU6050_Read_Gyro();
-//    MPU6050_Read_Theta();
+    MPU6050_Read_Theta();
 //
 //    MPU6050_Set_AccelOffset();
 //    MPU6050_Set_OmegaOffset();
-//    MPU6050_Set_ThetaOffset();
+    MPU6050_Set_ThetaOffset();
 
     while (1) {
         // some code to indicate that the core is not dead
@@ -109,9 +109,9 @@ void core2_main(void) {
 
         MPU6050_Read_Theta();
         MPU6050_Get_Theta(&theta_x, &theta_y,&theta_z);
-        OLED_Printf(5,45,6,"%06.3f",theta_x);
-        OLED_Printf(5,55,6,"%06.3f",theta_y);
-        OLED_Printf(65,45,6,"%06.3f",theta_z);
+        OLED_Printf(5,35,6,"%06.3f",theta_x);
+        OLED_Printf(5,45,6,"%06.3f",theta_y);
+        OLED_Printf(5,55,6,"%06.3f",theta_z);
 
         Time_Delay_us(10000);
         OLED_Update();
