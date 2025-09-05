@@ -1,6 +1,8 @@
 #include "RemoteControl.h"
 
-#include "movements.h"
+#include "Movements.h"
+#include "Display.h"
+#include "stdio.h"
 
 #define CACHE_SIZE      256
 #define PACKAGE_HEAD    0xFF
@@ -20,16 +22,17 @@ void RemoteControl_Init(){
 
 void RemoteControl_Load(uint8 *_ptr, uint16 _length){
     // load bytes from cache
-    _tail = (_tail + _length) % CACHE_SIZE;
     for(int i = 0;i < _length;i++){
-        _cache[(_head + i) % CACHE_SIZE] = _ptr[i];
+        _cache[(_tail + i) % CACHE_SIZE] = _ptr[i];
     }
+    _tail = (_tail + _length) % CACHE_SIZE;
 }
 
 void RemoteControl_Detect(){
     uint16 _p = _head;
     uint16 _q;
     uint16 _length = 0;
+
     while(_p != _tail){
         if(_cache[_p] == PACKAGE_HEAD)
             break;
@@ -37,31 +40,36 @@ void RemoteControl_Detect(){
         _p++;
         _p %= CACHE_SIZE;
     }
+
     if(_p != _tail){
-        uint16 _temp = 0;
         _q = (_p+1) % CACHE_SIZE;
 
         while(_q != _tail){
-            if(_cache[_q] == PACKAGE_HEAD){
-                _length = _temp;
+            if(_cache[_q] == PACKAGE_TAIL){
+                _length = (_q - _p - 1) % CACHE_SIZE;
                 break;
             }
 
             _q++;
             _q %= CACHE_SIZE;
-            _temp++;
         }
     }
 
     if(_length){
+        _head = (_q + 1) % CACHE_SIZE;
+
         for(int i = 1;i <= _length;i++){
             _package[i - 1] = _cache[(_p+i) % CACHE_SIZE];
         }
         _package[_length] = 0;
+
+        sscanf(_package, "%f,%f;", &_servo, &_motor);
+
+        Servo_Set(_servo);
+        Motor_Set(_motor);
+
+
+//        OLED_ShowFloatNum(0, 8, _motor, 1, 4, OLED_6X8);
+//        OLED_ShowFloatNum(0, 16, _servo, 1, 4, OLED_6X8);
     }
-
-    sscanf("%f,%f", &_servo, &_motor);
-
-    Motor_Set(_motor);
-    Servo_Set(_servo);
 }
