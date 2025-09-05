@@ -67,6 +67,7 @@ void core2_main(void) {
 	MPU6050_Init();
 	Encoder_Init();
 	Servo_Init();
+	Servo_SetCenter(0.25);
 	Motor_Init();
 	PID_Init(0.1, 0.0, 0.0);
 
@@ -75,11 +76,34 @@ void core2_main(void) {
 	while (Intercore_ReadyToGo() == 0)
 		;
 
+	sint32 encoder_value_start = 0, edge_num = 0;
+
 	// main loop
 	while (1) {
 		// some code to indicate that the core is not dead
 		IO_LED_Toggle(3);
 		Time_Delay_us(100000);
+
+		double thetaX, thetaY, thetaZ, thetaZ_before_turn;
+
+		MPU6050_Read_Theta();
+		MPU6050_Get_Theta(&thetaX, &thetaY, &thetaZ);
+
+		if (Encoder_GetValue() - encoder_value_start < 5000) {
+		    Servo_Set(0);
+		    Motor_Set(-0.15);
+		    thetaZ_before_turn = thetaZ;
+		} else {
+		    Servo_Set(1);
+		    if (thetaZ >= 90 * edge_num) {
+		        encoder_value_start = Encoder_GetValue();
+		        edge_num++;
+		    }
+		}
+
+		OLED_ShowSignedNum(0, 0, Encoder_GetValue() - encoder_value_start, 5, OLED_8X16);
+		OLED_ShowFloatNum(0, 16, thetaZ - thetaZ_before_turn, 5, 2, OLED_8X16);
+        OLED_Update();
 	}
 }
 
