@@ -247,31 +247,29 @@ void* Camera_Release(uint16 (*img_ptr)[CAM_IMAGE_WIDTH]) {
 void* _Camera_Image_Received(void) {
     uint16 (*temp_ptr)[CAM_IMAGE_WIDTH] = _writing_img_ptr;
     // if there is a buffer occupied, then there is only one buffer available
-    if (_occupied_img_ptr != 0) {
-        if (_occupied_img_ptr == g_Image1) {
-            if (_writing_img_ptr == g_Image2)
-                _writing_img_ptr = g_Image3;
-            else
-                _writing_img_ptr = g_Image2;
-        } else if (_occupied_img_ptr == g_Image2) {
-            if (_writing_img_ptr == g_Image1)
-                _writing_img_ptr = g_Image3;
-            else
-                _writing_img_ptr = g_Image1;
-        } else if (_occupied_img_ptr == g_Image3) {
-            if (_writing_img_ptr == g_Image1)
-                _writing_img_ptr = g_Image2;
-            else
-                _writing_img_ptr = g_Image1;
-        } else {        // no image is occupied
-            if (_writing_img_ptr == g_Image1)
-                _writing_img_ptr = g_Image2;
-            else if (_writing_img_ptr == g_Image2)
-                _writing_img_ptr = g_Image3;
-            else if (_writing_img_ptr == g_Image3)
-                _writing_img_ptr = g_Image1;
-        }
-    }
+	if (_occupied_img_ptr == g_Image1) {
+		if (_writing_img_ptr == g_Image2)
+			_writing_img_ptr = g_Image3;
+		else
+			_writing_img_ptr = g_Image2;
+	} else if (_occupied_img_ptr == g_Image2) {
+		if (_writing_img_ptr == g_Image1)
+			_writing_img_ptr = g_Image3;
+		else
+			_writing_img_ptr = g_Image1;
+	} else if (_occupied_img_ptr == g_Image3) {
+		if (_writing_img_ptr == g_Image1)
+			_writing_img_ptr = g_Image2;
+		else
+			_writing_img_ptr = g_Image1;
+	} else {        // no image is occupied
+		if (_writing_img_ptr == g_Image1)
+			_writing_img_ptr = g_Image2;
+		else if (_writing_img_ptr == g_Image2)
+			_writing_img_ptr = g_Image3;
+		else if (_writing_img_ptr == g_Image3)
+			_writing_img_ptr = g_Image1;
+	}
     // assign the latest image pointer
     _latest_img_ptr = temp_ptr;
     // and return the writing pointer
