@@ -77,9 +77,38 @@ void core2_main(void) {
 
 	// main loop
 	while (1) {
-		// some code to indicate that the core is not dead
 		IO_LED_Toggle(3);
-		Time_Delay_us(100000);
+
+		// update mpu6050 data
+		MPU6050_Update_Accel();
+		MPU6050_Update_Omega();
+		MPU6050_Update_Theta();
+
+		// get mpu6050 data and print them on OLED
+
+		// display "AccelX AccelY AccelZ" on OLED line 1
+		OLED_ShowString(0, 0, "AccelX AccelY AccelZ", OLED_6X8);
+		// get acceleration data (m/s^s) and display on OLED line 2
+		OLED_ShowFloatNum(0, 8, MPU6050_Get_AccelX(), 2, 1, OLED_6X8);
+		OLED_ShowFloatNum(40, 8, MPU6050_Get_AccelY(), 2, 1, OLED_6X8);
+		OLED_ShowFloatNum(80, 8, MPU6050_Get_AccelZ(), 2, 1, OLED_6X8);
+
+		// display "OmegaX OmegaY OmegaZ" on OLED line 4
+		OLED_ShowString(0, 24, "OmegaX OmegaY OmegaZ", OLED_6X8);
+		// get angle velocity data (degree/s) and display on OLED line 5
+        OLED_ShowFloatNum(0, 32, MPU6050_Get_OmegaX(), 3, 1, OLED_6X8);
+        OLED_ShowFloatNum(40, 32, MPU6050_Get_OmegaY(), 3, 1, OLED_6X8);
+        OLED_ShowFloatNum(80, 32, MPU6050_Get_OmegaZ(), 3, 1, OLED_6X8);
+
+        // display "ThetaX ThetaY ThetaZ" on OLED line 7
+        OLED_ShowString(0, 48, "ThetaX ThetaY ThetaZ", OLED_6X8);
+        // get angle data (degree) and display on OLED line 8
+        OLED_ShowFloatNum(0, 56, MPU6050_Get_ThetaX(), 3, 1, OLED_6X8);
+        OLED_ShowFloatNum(40, 56, MPU6050_Get_ThetaY(), 3, 1, OLED_6X8);
+        OLED_ShowFloatNum(80, 56, MPU6050_Get_ThetaZ(), 3, 1, OLED_6X8);
+
+        // update OLED data
+        OLED_Update();
 	}
 }
 
