@@ -27,14 +27,35 @@
 #include "Ifx_Types.h"
 #include "IfxCpu.h"
 #include "IfxScuWdt.h"
+#include <stdlib.h>
 
 #include "XinDongLib/Intercore.h"
 #include "XinDongLib/Camera.h"
 #include "XinDongLib/CV.h"
 #include "XinDongLib/IO.h"
 #include "XinDongLib/Time.h"
+#include "XinDongLib/Movements.h"
+#include "XinDongLib/Display.h"
+#include "XinDongLib/bluetooth.h"
+#include "XinDongLib/Serial.h"
+
+// PID control parameters
+#define TURN_KP  0.01f   // Steering P parameter
+#define TURN_KD  0.001f   // Steering D parameter
+#define SPEED_NORMAL  -0.15f    // Normal speed (30%)
+#define SPEED_TURN   -0.15f    // Turn speed (25%)
+
+// Straight/Turn detection thresholds
+#define STRAIGHT_ERROR_THRESHOLD 10    // Midline error threshold
+#define TURN_COUNT_THRESHOLD    5      // Consecutive detection count threshold
+
+// Line following variables
+static sint16 last_error = 0;       // Previous error
+static uint8 turn_count = 0;        // Consecutive turn counter
+static float current_speed = SPEED_NORMAL;  // Current speed
 
 extern IfxCpu_syncEvent g_cpuSyncEvent;
+uint8 header[] = {0xFF};
 
 void core1_main(void) {
     IfxCpu_enableInterrupts();
@@ -58,12 +79,58 @@ void core1_main(void) {
 	Intercore_CPU1_Ready();
 	while (Intercore_ReadyToGo() == 0)
 		;
+	Servo_SetCenter(-0.13f);
+	Servo_Set(0);
 
+	Time_Delay_us(1000000);
 	// main loop
 	while (1) {
 		// some code to indicate that the core is not dead
 		IO_LED_Toggle(2);
 		Time_Delay_us(100000);
+		CV_Result_t cv_result;
+		    float servo_output;
+
+		    // 1. Get image processing result
+		    cv_result = CV_ProcessImage();
+
+		    if(cv_result.valid) {
+		        // 2. Detect straight/turn section
+		        if(abs(cv_result.error) > STRAIGHT_ERROR_THRESHOLD) {
+		            // Possible turn detected
+		            turn_count++;
+		            if(turn_count > TURN_COUNT_THRESHOLD) {
+		                current_speed = SPEED_TURN;  // Reduce speed for turn
+		            }
+		        } else {
+		            // Straight section
+		            turn_count = 0;
+		            current_speed = SPEED_NORMAL;  // Resume normal speed
+		        }
+
+		        // 3. Calculate servo output (PD control)
+		        servo_output = TURN_KP * cv_result.error +
+		                      TURN_KD * (cv_result.error - last_error);
+
+		        // 4. Update control outputs
+		        Motor_Set(current_speed);
+		        Servo_Set(servo_output);
+
+		        // 5. Save previous error
+		        last_error = cv_result.error;
+		    }
+		    OLED_ShowString(0, 0, "Valid:", OLED_6X8);
+		    OLED_ShowNum(40, 0, cv_result.valid, 2, OLED_6X8);
+            OLED_ShowString(0, 8, "Error:", OLED_6X8);
+            OLED_ShowFloatNum(40, 8, cv_result.error, 2, 3, OLED_6X8);
+            // 1. Display servo output (servo_output; examples: 0.060, -0.030)
+            OLED_ShowString(0, 16, "Servo:", OLED_6X8);
+            OLED_ShowFloatNum(40, 16, servo_output, 1, 3, OLED_6X8);  // One integer digit (-1 to 1) with three decimal places (e.g., 0.060)
+
+            // 2. Display current speed (current_speed; examples: 0.30, 0.25)
+            OLED_ShowString(0, 24, "Speed:", OLED_6X8);
+            OLED_ShowFloatNum(40, 24, current_speed, 1, 2, OLED_6X8);  // One integer digit with two decimal places (e.g., 0.30, 0.25)
+		    OLED_Update();  // Force display refresh
 	}
 }
 
