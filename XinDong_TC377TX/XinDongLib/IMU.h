@@ -36,11 +36,11 @@
 /*********************************************************************************************************************/
 void MPU6050_Init(void);
 
-EI2C_Status MPU6050_Read_Accel(void);
+EI2C_Status MPU6050_Update_Accel(void);
 
-EI2C_Status MPU6050_Read_Gyro(void);
+EI2C_Status MPU6050_Update_Omega(void);
 
-EI2C_Status MPU6050_Read_Theta(void);
+EI2C_Status MPU6050_Update_Theta(void);
 
 double MPU6050_Get_AccelX(void);
 double MPU6050_Get_AccelY(void);

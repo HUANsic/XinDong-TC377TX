@@ -465,6 +465,10 @@ void MPU6050_Init(void)
 
     _dmpInitialize();
 
+    _MPU6050_Write_Bit(0x6A,7,1);   //使能DMP
+
+    Time_Delay_us(2e5);
+
     MPU6050_ThetaZ_Reset();
 }
 
@@ -476,24 +480,24 @@ unsigned char getDeviceID(void)
     return b == 0x34;   //判断B是否等于0x34，如果等于返回1，不等于返回0
 }
 
-EI2C_Status MPU6050_Read_Accel() {
+EI2C_Status MPU6050_Update_Accel() {
     uint8 dat[6];
 
     EI2C_Status ret = _MPU6050_Read_Bytes(MPU6050_ACCEL_XOUT_H, 6, dat);
-    _imu_accel[0] = (sint16)(((uint16)dat[0] << 8 | dat[1]));
-    _imu_accel[1] = (sint16)(((uint16)dat[2] << 8 | dat[3]));
-    _imu_accel[2] = (sint16)(((uint16)dat[4] << 8 | dat[5]));
+    _imu_accel[0] = ((sint16)(((uint16)dat[0] << 8 | dat[1]))) * 9.81 / 16384.0;
+    _imu_accel[1] = ((sint16)(((uint16)dat[2] << 8 | dat[3]))) * 9.81 / 16384.0;
+    _imu_accel[2] = ((sint16)(((uint16)dat[4] << 8 | dat[5]))) * 9.81 / 16384.0;
 
     return ret;
 }
 
-EI2C_Status MPU6050_Read_Gyro(void) {
+EI2C_Status MPU6050_Update_Omega(void) {
     uint8 dat[6];
 
     EI2C_Status ret = _MPU6050_Read_Bytes(MPU6050_GYRO_XOUT_H, 6, dat);
-    _imu_omega[0] = (sint16)(((uint16)dat[0] << 8 | dat[1]));
-    _imu_omega[1] = (sint16)(((uint16)dat[2] << 8 | dat[3]));
-    _imu_omega[2] = (sint16)(((uint16)dat[4] << 8 | dat[5]));
+    _imu_omega[0] = ((sint16)(((uint16)dat[0] << 8 | dat[1]))) / 32.8;
+    _imu_omega[1] = ((sint16)(((uint16)dat[2] << 8 | dat[3]))) / 32.8;
+    _imu_omega[2] = ((sint16)(((uint16)dat[4] << 8 | dat[5]))) / 32.8;
 
     return ret;
 }
@@ -501,14 +505,14 @@ EI2C_Status MPU6050_Read_Gyro(void) {
 double _yaw_last = 0;
 sint8 _ang_state = 0;
 
-double angle_with_round(double *ang_last,double *ang_now,sint8 *ang_state)//用于连续追踪角度变化，防止在函数边界的相位跳变
+double _angle_with_round(double *ang_last,double *ang_now,sint8 *ang_state)//用于连续追踪角度变化，防止在函数边界的相位跳变
 {
     if(*ang_last>145.0 && *ang_now<-145.0) *ang_state=*ang_state+1;
     if(*ang_last<-145.0 && *ang_now>145.0) *ang_state=*ang_state-1;
     return ((*ang_now)+(*ang_state)*360.0);
 }
 
-EI2C_Status MPU6050_Read_Theta(void) {
+EI2C_Status MPU6050_Update_Theta(void) {
     unsigned int mpu6050_fifo_count = 0;
     uint8 zd;
     _MPU6050_Read_Byte(0x3A,&zd);
@@ -532,7 +536,7 @@ EI2C_Status MPU6050_Read_Theta(void) {
     double roll  = atan2((2 * Q[2] * Q[3] + 2 * Q[0] * Q[1]),(-2 * Q[1] * Q[1] - 2 * Q[2]* Q[2] + 1)) / MPU6050_PI * 180.0; // roll
     //获取偏航角
     double yaw_temp=atan2(2 * (Q[1] * Q[2] + Q[0] * Q[3]),(1-2*Q[2]*Q[2]-2*Q[3]*Q[3])) / MPU6050_PI * 180.0;  //yaw
-    double yaw=angle_with_round(&_yaw_last,&yaw_temp,&_ang_state);
+    double yaw=_angle_with_round(&_yaw_last,&yaw_temp,&_ang_state);
     _yaw_last=yaw_temp;//保持比较的两个角都在-180~180之间
 
     _imu_theta[0] = pitch;
@@ -598,5 +602,6 @@ double MPU6050_Get_ThetaZ(void) {
 }
 
 void MPU6050_ThetaZ_Reset(void) {
+    MPU6050_Update_Theta();
     _thetaZ_offset += MPU6050_Get_ThetaZ();
 }
