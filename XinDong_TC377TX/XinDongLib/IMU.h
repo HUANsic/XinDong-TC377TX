@@ -42,10 +42,18 @@ EI2C_Status MPU6050_Read_Gyro(void);
 
 EI2C_Status MPU6050_Read_Theta(void);
 
-void MPU6050_Get_Accel(double *accelX, double *accelY, double *accelZ);
+double MPU6050_Get_AccelX(void);
+double MPU6050_Get_AccelY(void);
+double MPU6050_Get_AccelZ(void);
 
-void MPU6050_Get_Omega(double *omegaX, double *omegaY, double *omegaZ);
+double MPU6050_Get_OmegaX(void);
+double MPU6050_Get_OmegaY(void);
+double MPU6050_Get_OmegaZ(void);
 
-void MPU6050_Get_Theta(double *thetaX, double *thetaY, double *thetaZ);
+double MPU6050_Get_ThetaX(void);
+double MPU6050_Get_ThetaY(void);
+double MPU6050_Get_ThetaZ(void);
+
+void MPU6050_ThetaZ_Reset(void);
 
 #endif /* XINDONGLIB_IMU_H_ */

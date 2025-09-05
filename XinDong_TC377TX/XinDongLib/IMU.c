@@ -11,6 +11,7 @@
 #define MPU6050_GYRO_XOUT_H         (0x43)
 
 double _imu_accel[3], _imu_omega[3], _imu_theta[3];
+double _thetaZ_offset;
 
 unsigned char _dmpdatas[42]; //DMP数据
 
@@ -464,7 +465,7 @@ void MPU6050_Init(void)
 
     _dmpInitialize();
 
-    _MPU6050_Write_Bit(0x6A,7,1);//(&MPU6050,0x6A,7,1);   //使能DMP
+    MPU6050_ThetaZ_Reset();
 }
 
 /*验证MPU6050连接*/
@@ -557,4 +558,45 @@ void MPU6050_Get_Theta(double *thetaX, double *thetaY, double *thetaZ){
     *thetaX = _imu_theta[0];
     *thetaY = _imu_theta[1];
     *thetaZ = _imu_theta[2];
+}
+
+
+double MPU6050_Get_AccelX(void){
+    return _imu_accel[0];
+}
+
+double MPU6050_Get_AccelY(void){
+    return _imu_accel[1];
+}
+
+double MPU6050_Get_AccelZ(void){
+    return _imu_accel[2];
+}
+
+double MPU6050_Get_OmegaX(void){
+    return _imu_omega[0];
+}
+
+double MPU6050_Get_OmegaY(void) {
+    return _imu_omega[1];
+}
+
+double MPU6050_Get_OmegaZ(void) {
+    return _imu_omega[2];
+}
+
+double MPU6050_Get_ThetaX(void) {
+    return _imu_theta[0];
+}
+
+double MPU6050_Get_ThetaY(void) {
+    return _imu_theta[1];
+}
+
+double MPU6050_Get_ThetaZ(void) {
+    return _imu_theta[2] - _thetaZ_offset;
+}
+
+void MPU6050_ThetaZ_Reset(void) {
+    _thetaZ_offset += MPU6050_Get_ThetaZ();
 }
