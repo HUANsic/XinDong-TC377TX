@@ -19,9 +19,9 @@
 /*********************************************************************************************************************/
 #define CV_IMAGE_WIDTH      CAM_IMAGE_WIDTH
 #define CV_IMAGE_HEIGHT     CAM_IMAGE_HEIGHT
-#define CV_TARGET_Y         180  // 指定提取中点的纵轴位置
-#define CV_SCAN_START_Y     150  // 补线判断的起始Y坐标
-#define CV_SCAN_END_Y       170  // 补线判断的结束Y坐标
+#define CV_TARGET_Y         CAM_IMAGE_HEIGHT / 2       // 指定提取中点的纵轴位置
+#define CV_SCAN_START_Y     CAM_IMAGE_HEIGHT / 2 - 10  // 补线判断的起始Y坐标
+#define CV_SCAN_END_Y       CAM_IMAGE_HEIGHT / 2 + 10  // 补线判断的结束Y坐标
 
 /*********************************************************************************************************************/
 /*-------------------------------------------------Global variables--------------------------------------------------*/

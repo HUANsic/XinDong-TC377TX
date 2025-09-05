@@ -58,7 +58,7 @@ void OLED_ReverseArea(uint8 X, uint8 Y, uint8 Width, uint8 Height);
 void OLED_ShowChar(uint8 X, uint8 Y, char Char, uint8 FontSize);
 void OLED_ShowString(uint8 X, uint8 Y, char *String, uint8 FontSize);
 void OLED_ShowNum(uint8 X, uint8 Y, uint32 Number, uint8 Length, uint8 FontSize);
-void OLED_ShowSignedNum(uint8 X, uint8 Y, uint32 Number, uint8 Length, uint8 FontSize);
+void OLED_ShowSignedNum(uint8 X, uint8 Y, sint32 Number, uint8 Length, uint8 FontSize);
 void OLED_ShowHexNum(uint8 X, uint8 Y, uint32 Number, uint8 Length, uint8 FontSize);
 void OLED_ShowBinNum(uint8 X, uint8 Y, uint32 Number, uint8 Length, uint8 FontSize);
 void OLED_ShowFloatNum(uint8 X, uint8 Y, double Number, uint8 IntLength, uint8 FraLength, uint8 FontSize);

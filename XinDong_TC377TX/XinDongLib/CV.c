@@ -12,30 +12,10 @@ sint16 g_buxian = 0;  // 补线方向判断变量
 void CV_PreprocessImage(uint16 *input_img, 
                        uint16 *mask) {
     uint16 y, x;
-    uint16 window = 9; // 滑动窗口宽度，奇数，建议5~15
-    uint16 half_win = window / 2;
-    uint32 sum;
-    uint16 mean;
-    uint16 left, right;
-
+    const uint16 threshold = 200; // 手动阈值，可按需调整
     for (y = 0; y < CV_IMAGE_HEIGHT; y++) {
-        // 先计算第一个窗口的和
-        sum = 0;
-        for (x = 0; x < window && x < CV_IMAGE_WIDTH; x++) {
-            sum += input_img[y * CV_IMAGE_WIDTH + x];
-        }
         for (x = 0; x < CV_IMAGE_WIDTH; x++) {
-            // 窗口左右边界
-            left = (x > half_win) ? (x - half_win) : 0;
-            right = (x + half_win < CV_IMAGE_WIDTH) ? (x + half_win) : (CV_IMAGE_WIDTH - 1);
-            // 更新窗口和
-            if (x > half_win && right < CV_IMAGE_WIDTH) {
-                sum = sum - input_img[y * CV_IMAGE_WIDTH + (left - 1)] + input_img[y * CV_IMAGE_WIDTH + right];
-            }
-            // 计算均值（显式转换以避免隐式截断告警）
-            mean = (uint16)(sum / (uint32)(right - left + 1));
-            // 二值化
-            if (input_img[y * CV_IMAGE_WIDTH + x] > mean) {
+            if (input_img[y * CV_IMAGE_WIDTH + x] > threshold) {
                 mask[y * CV_IMAGE_WIDTH + x] = 255;
             } else {
                 mask[y * CV_IMAGE_WIDTH + x] = 0;
@@ -75,6 +55,30 @@ uint16 CV_CalculateAveragePosition(uint16 *mask,
     return (uint16)(sum / count);
 }
 
+// 从左到右查找第一个白色像素，若未找到，返回start_x
+uint16 CV_FindFirstWhiteFromLeft(uint16 *mask,
+                               uint16 y, uint16 start_x, uint16 end_x) {
+    uint16 x;
+    for (x = start_x; x < end_x; x++) {
+        if (mask[y * CV_IMAGE_WIDTH + x] == 255) {
+            return x;
+        }
+    }
+    return start_x;
+}
+
+// 从右到左查找第一个白色像素，若未找到，返回end_x
+uint16 CV_FindFirstWhiteFromRight(uint16 *mask,
+                                uint16 y, uint16 start_x, uint16 end_x) {
+    sint32 x; // 需要有符号类型以便向下计数
+    for (x = (sint32)end_x - 1; x >= (sint32)start_x; x--) {
+        if (mask[y * CV_IMAGE_WIDTH + (uint16)x] == 255) {
+            return (uint16)x;
+        }
+    }
+    return end_x;
+}
+
 // 计算图像中线的偏差（优化版本，直接在原图上处理）- 一维展开
 sint16 CV_CalculateMidlineError(uint16 *input_img, 
                               uint16 *mask) {
@@ -87,28 +91,25 @@ sint16 CV_CalculateMidlineError(uint16 *input_img,
     
     // 从下往上扫描
     for (y = CV_IMAGE_HEIGHT - 1; y >= 0; y--) {
-        // 检查分割线左端是否有赛道
-        if (CV_IsRegionEmpty(mask, y, (half > half_width) ? (half - half_width) : 0, half)) {
-            // 分割线左端无赛道
-            left = (half > half_width) ? (half - half_width) : 0;
+        // 按要求：左端从左往右找第一个白点，右端从右往左找第一个白点
+        // 左侧范围：[0, half)
+        if (CV_IsRegionEmpty(mask, y, 0, half)) {
+            left = 0;
             if (y >= CV_SCAN_START_Y && y <= CV_SCAN_END_Y) {
                 g_buxian -= 1;  // 左边补线
             }
         } else {
-            // 计算分割线左端平均位置
-            left = CV_CalculateAveragePosition(mask, y, 0, half);
+            left = CV_FindFirstWhiteFromLeft(mask, y, 0, half);
         }
-        
-        // 检查分割线右端是否有赛道
-        if (CV_IsRegionEmpty(mask, y, half, (half + half_width < CV_IMAGE_WIDTH) ? (half + half_width) : CV_IMAGE_WIDTH)) {
-            // 分割线右端无赛道
-            right = (half + half_width < CV_IMAGE_WIDTH) ? (half + half_width) : CV_IMAGE_WIDTH;
+
+        // 右侧范围：[half, CV_IMAGE_WIDTH)
+        if (CV_IsRegionEmpty(mask, y, half, CV_IMAGE_WIDTH)) {
+            right = CV_IMAGE_WIDTH;
             if (y >= CV_SCAN_START_Y && y <= CV_SCAN_END_Y) {
                 g_buxian += 1;  // 右边补线
             }
         } else {
-            // 计算分割线右端平均位置
-            right = CV_CalculateAveragePosition(mask, y, half, CV_IMAGE_WIDTH) + half;
+            right = CV_FindFirstWhiteFromRight(mask, y, half, CV_IMAGE_WIDTH);
         }
         
         // 计算拟合中点
