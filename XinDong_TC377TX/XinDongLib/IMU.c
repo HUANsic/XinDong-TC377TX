@@ -1,23 +1,18 @@
 #include "IMU.h"
 #include "IfxI2c_PinMap.h"
-#include "Display.h"
 #include "Time.h"
 #include <math.h>
 
-#define MPU6050_OMEGA_INT_THRESHOLD 0.03
-
 #define MPU6050_ADDR 0xD0
 
-#define SMPLRT_DIV_REG 0x19
-#define GYRO_CONFIG_REG 0x1B
-#define ACCEL_CONFIG_REG 0x1C
-#define ACCEL_XOUT_H_REG 0x3B
-#define TEMP_OUT_H_REG 0x41
-#define GYRO_XOUT_H_REG 0x43
-#define PWR_MGMT_1_REG 0x6B
-#define WHO_AM_I_REG 0x75
+#define MPU6050_PI (3.141592653589793238462)
 
-double _imu_accel[3], _imu_omega[3], _imu_theta[3], _imu_accel_offset[3], _imu_omega_offset[3], _imu_theta_offset[3];
+#define MPU6050_ACCEL_XOUT_H        (0x3B)
+#define MPU6050_GYRO_XOUT_H         (0x43)
+
+double _imu_accel[3], _imu_omega[3], _imu_theta[3];
+
+unsigned char _dmpdatas[42]; //DMP数据
 
 EI2C_Typedef _MPU6050_I2C_Struct;
 
@@ -152,6 +147,7 @@ uint8 _dmpmemorydata[1929]={
    0x98, 0xF1, 0xA3, 0xA3, 0xA3, 0xA3, 0x97, 0xA3, 0xA3, 0xA3, 0xA3, 0xF3, 0x9B, 0xA3, 0xA3, 0xDC,
    0xB9, 0xA7, 0xF1, 0x26, 0x26, 0x26, 0xD8, 0xD8, 0xFF
 };
+
 uint8 _dmpcfgupddata[192] = {
 //  dmp config
 //  BANK    OFFSET  LENGTH  [DATA]
@@ -199,6 +195,7 @@ uint8 _dmpcfgupddata[192] = {
     0x01,   0x62,   0x02,   0x00, 0x00,
     0x00,   0x60,   0x04,   0x00, 0x40, 0x00, 0x00*/
 };
+
 uint8 _dmpUpdates[47]={
 
     0x01,   0xB2,   0x02,   0xFF, 0xFF,
@@ -213,6 +210,10 @@ uint8 _dmpUpdates[47]={
 
 EI2C_Status _MPU6050_Write_Byte(uint8 reg, uint8 data) {
     return EI2C_Mem_Write(&_MPU6050_I2C_Struct, MPU6050_ADDR, reg, &data, 1);
+}
+
+EI2C_Status _MPU6050_Write_Bytes(uint8 reg, uint8 length, uint8* p_data) {
+    return EI2C_Mem_Write(&_MPU6050_I2C_Struct, MPU6050_ADDR, reg, p_data, length);
 }
 
 EI2C_Status _MPU6050_Write_Bit(uint8 reg, uint8 bitNum, uint8 data) {
@@ -243,7 +244,11 @@ EI2C_Status _MPU6050_Write_Bits(uint8 reg, uint8 bitStart, uint8 length, uint8 d
     return EI2C_Mem_Write(&_MPU6050_I2C_Struct, MPU6050_ADDR, reg, &currentData, 1);
 }
 
-EI2C_Status _MPU6050_Read(uint8 reg, uint16 length, uint8 *data) {
+EI2C_Status _MPU6050_Read_Byte(uint8 reg, uint8 *data) {
+    return EI2C_Mem_Read(&_MPU6050_I2C_Struct, MPU6050_ADDR, reg, data, 1);
+}
+
+EI2C_Status _MPU6050_Read_Bytes(uint8 reg, uint16 length, uint8 *data) {
     return EI2C_Mem_Read(&_MPU6050_I2C_Struct, MPU6050_ADDR, reg, data, length);
 }
 
@@ -266,12 +271,17 @@ EI2C_Status _MPU6050_Read_Bits(uint8 reg, uint8 bitStart, uint8 length, uint8 *d
     return status;
 }
 
-uint8 _MPU6050_Load_Firmware() {
-    uint32 datanum=0;  //DMP固件写入标志位
-    uint8 ye,i;
-    uint8 bank=0;   //段（256个数据一段）
-    uint8 addr=0;
-    EI2C_Status status;
+
+/*
+   加载 DMP代码固件
+   返回值  (1=成功,0=失败)
+ */
+unsigned char _loadfirmware(void)
+{
+  unsigned int datanum=0;   //DMP固件写入标志位
+  unsigned char ye,i;
+  unsigned char bank=0; //段（256个数据一段）
+  unsigned char addr=0;
 
     for(;bank<8;bank++)
     {
@@ -284,10 +294,7 @@ uint8 _MPU6050_Load_Firmware() {
             _MPU6050_Write_Byte(0x6d,bank);
             _MPU6050_Write_Byte(0x6e,addr);
 
-            status = EI2C_Mem_Write(&_MPU6050_I2C_Struct, MPU6050_ADDR, 0x6f, _dmpmemorydata + datanum, 16);
-            if (status != EI2C_OK) {
-                return 0;
-            }
+            _MPU6050_Write_Bytes(0x6f,16,&_dmpmemorydata[datanum]);
             datanum += 16;
             addr += 16;
         }
@@ -295,177 +302,153 @@ uint8 _MPU6050_Load_Firmware() {
     _MPU6050_Write_Byte(0x6d,7);
     _MPU6050_Write_Byte(0x6e,addr);
 
-    status = EI2C_Mem_Write(&_MPU6050_I2C_Struct, MPU6050_ADDR, 0x6f, _dmpmemorydata + datanum, 9);
+    _MPU6050_Write_Bytes(0x6f,9,&_dmpmemorydata[datanum]);
+    datanum += 9;
 
-    if (status != EI2C_OK) {
-        return 0;
-    }
     return 1;
 }
 
-uint8 _MPU6050_Loadcfgupd() {
-    uint8 line; //一共需要写入30条设置数据
-    uint8 bank; //页
-    uint8 datacounts=0; //DMP设置数据标志位
-    uint8 bytes2write;  //数据长度。
-    uint8 offset;   //偏移地址
-//    uint8 writingcounts;    //数据写入标志与bytes2write一同使用
-    uint8 special;
-    EI2C_Status status;
+unsigned char _loadcfgupd(void)  //DMP设置
+{
+  unsigned char line;   //一共需要写入30条设置数据
+  unsigned char bank;   //页
+  unsigned char datacounts=0;   //DMP设置数据标志位
+  unsigned char bytes2write;    //数据长度。
+  unsigned char offset; //偏移地址
+  unsigned char special;
 
-    for (line=0;line<30;line++)
-    {
-        bank=_dmpcfgupddata[datacounts++];
-        offset=_dmpcfgupddata[datacounts++];
-        bytes2write=_dmpcfgupddata[datacounts++];
-        _MPU6050_Write_Byte(0x6d,bank);
-        _MPU6050_Write_Byte(0x6e,offset);
+  for (line=0;line<30;line++)
+  {
+    bank=_dmpcfgupddata[datacounts++];
+    offset=_dmpcfgupddata[datacounts++];
+    bytes2write=_dmpcfgupddata[datacounts++];
+    _MPU6050_Write_Byte(0x6d,bank);
+    _MPU6050_Write_Byte(0x6e,offset);
 
-        status = EI2C_Mem_Write(&_MPU6050_I2C_Struct, MPU6050_ADDR, 0x6f, _dmpcfgupddata + datacounts, bytes2write);
-        if (status != EI2C_OK) {
+    _MPU6050_Write_Bytes(0x6f,bytes2write,&_dmpcfgupddata[datacounts]);
+    datacounts += bytes2write;
+
+    if(0 == bytes2write) {
+        special=_dmpcfgupddata[datacounts++];
+        if(0x01 == special){
+            //设置零运动中断启用（真）;
+            //设置FIFO缓冲区溢出启用（真）;
+            //设置DMP启用（真）;
+            _MPU6050_Write_Byte(0x38,0x32);
+        }
+        else
             return 0;
-        }
-
-        datacounts += bytes2write;
-
-        if (bytes2write == 0) {
-            special = _dmpcfgupddata[datacounts++];
-            if (special == 0x01) {
-                // Enable zero motion interrupt (true);
-                // Enable FIFO buffer overflow (true);
-                // Enable DMP (true);
-                _MPU6050_Write_Byte(0x38, 0x32);
-            } else {
-                return 0;
-            }
-        }
     }
+  }
+    return 1;
+}
+
+/*最后更新DMP*/
+unsigned char _xdmpUpdates(unsigned char datacounts)
+{
+    unsigned char bank,offset,bytes2write;
+    bank=_dmpUpdates[datacounts++];
+    offset=_dmpUpdates[datacounts++];
+    bytes2write=_dmpUpdates[datacounts++];
+    _MPU6050_Write_Byte(0x6d,bank);
+    _MPU6050_Write_Byte(0x6e,offset);
+
+    _MPU6050_Write_Bytes(0x6f,bytes2write,&_dmpUpdates[datacounts]);
 
     return 1;
 }
 
-uint8 _MPU6050_DMP_Updates(uint8 datacounts) {
-    uint8 bank, offset, bytes2write;
-    bank = _dmpUpdates[datacounts++];
-    offset = _dmpUpdates[datacounts++];
-    bytes2write = _dmpUpdates[datacounts++];
-    EI2C_Status status;
-
-    _MPU6050_Write_Byte(0x6d, bank);
-    _MPU6050_Write_Byte(0x6e, offset);
-
-    status = EI2C_Mem_Write(&_MPU6050_I2C_Struct, MPU6050_ADDR, 0x6f, _dmpUpdates + datacounts, bytes2write);
-
-    if (status != EI2C_OK) {
-        return 0;
-    }
-
-    // datacounts += bytes2write;
-
-    return 1;
+/*读取 FIFO 计数*/
+unsigned int _getFIFOCount()
+{
+    unsigned char i[2];
+    _MPU6050_Read_Bytes(0x72,2,i);
+    return ((i[0]<<8)+i[1]);
 }
 
-uint32 _MPU6050_Get_FIFO_Count() {
-    uint8 i[2];
-    EI2C_Mem_Read(&_MPU6050_I2C_Struct, MPU6050_ADDR, 0x72, i, 2);
-//    OLED_Printf(5,45,6,"%d",i[0]);
-//    OLED_Printf(5,55,6,"%d",i[1]);
-//    OLED_Update();
-    return ((i[0] << 8) + i[1]);
+/*FIFO数据读取
+参数 *Data    存储数据的地址
+返回值 (1=读取成功,0读取失败)
+*/
+EI2C_Status _readdmp(unsigned char *Data)
+{
+  return _MPU6050_Read_Bytes(0x74,42,Data);
 }
 
-EI2C_Status _MPU6050_Read_DMP(uint8 *data) {
-    return _MPU6050_Read(0x74, 42, data);
-}
-
-void _DMP_Init() {
-    uint8 hwRevision,otpValid,mpuIntStatus/*fifoBuffer[128]*/;
-    uint8 xgOffsetTC,ygOffsetTC,zgOffsetTC;
-    uint32 fifoCount;
-
-    _MPU6050_Write_Bit(0x6B, 7, 1); // Reset MPU6050
+//加载并配置 DMP 数字运动处理引擎
+unsigned char _dmpInitialize(void)
+{
+    unsigned char hwRevision,otpValid,mpuIntStatus/*fifoBuffer[128]*/;
+    unsigned char xgOffsetTC,ygOffsetTC,zgOffsetTC;
+    unsigned int fifoCount;
+    _MPU6050_Write_Bit(0x6B,7,1); //复位 MPU6050
     Time_Delay_us(30000);
-    _MPU6050_Write_Bit(0x6B,6,0);   //禁止睡眠模式
-    _MPU6050_Write_Byte(0x6D,0x70); //写入一个字节数据到0x6d寄存器(选择用户 bank)
-    _MPU6050_Write_Byte(0x6E,0x06); //写入一个字节数据到0x6e寄存器(选择存储字节)
-    _MPU6050_Read(0x6F,1,&hwRevision);  //读取
-    _MPU6050_Write_Byte(0x6D,0);    //重置内存 bank 选择
-    _MPU6050_Read_Bit(0x00,0,&otpValid);    //读取 OTP bank 有效标志
-    _MPU6050_Read_Bits(0x00,6,6,&xgOffsetTC);   //读陀螺偏置TC值 X
-    _MPU6050_Read_Bits(0x01,6,6,&ygOffsetTC);   //读陀螺偏置TC值 Y)
-    _MPU6050_Read_Bits(0x02,6,6,&zgOffsetTC);   //读陀螺偏置TC值 Z
-    _MPU6050_Write_Byte(0x25,0x7f); //设置从0地址 0x7
-    _MPU6050_Write_Bit(0x6A,5,0);   //禁用I2C主模式
-    _MPU6050_Write_Byte(0x25,0x68); //这里可能要改。还没有弄明白这里
-    _MPU6050_Write_Bit(0x6A,1,1);   //I2C总线主控复位
+    _MPU6050_Write_Bit(0x6B,6,0); //禁止睡眠模式
+    _MPU6050_Write_Byte(0x6D,0x70);    //写入一个字节数据到0x6d寄存器(选择用户 bank)
+    _MPU6050_Write_Byte(0x6E,0x06);    //写入一个字节数据到0x6e寄存器(选择存储字节)
+    _MPU6050_Read_Byte(0x6F,&hwRevision);  //读取
+    _MPU6050_Write_Byte(0x6D,0);   //重置内存 bank 选择
+    _MPU6050_Read_Bit(0x00,0,&otpValid);  //读取 OTP bank 有效标志
+    _MPU6050_Read_Bits(0x00,6,6,&xgOffsetTC); //读陀螺偏置TC值 X
+    _MPU6050_Read_Bits(0x01,6,6,&ygOffsetTC); //读陀螺偏置TC值 Y)
+    _MPU6050_Read_Bits(0x02,6,6,&zgOffsetTC); //读陀螺偏置TC值 Z
+    _MPU6050_Write_Byte(0x25,0x7f);    //设置从0地址 0x7
+    _MPU6050_Write_Bit(0x6A,5,0); //禁用I2C主模式
+    _MPU6050_Write_Byte(0x25,0x68);    //这里可能要改。还没有弄明白这里
+    _MPU6050_Write_Bit(0x6A,1,1); //I2C总线主控复位
     Time_Delay_us(20000);
-    if((_MPU6050_Load_Firmware()) == 0 ) return;  //加载 DMP代码到内存
-    if((_MPU6050_Loadcfgupd()) == 0 ) return; //配制DMP
-    _MPU6050_Write_Bits(0x6B,2,3,0x03); //设置时钟脉冲源Z陀螺
-    _MPU6050_Write_Byte(0x38,0x12); //设置DMP和FIFO_OFLOW启用中断
-    _MPU6050_Write_Byte(0x19,4);    //设置采样率为200 hz  (1khz / (1 + 4) = 200 Hz)
-    _MPU6050_Write_Bits(0x1A,5,3,0x1);  //设置外部帧同步TEMP_OUT_L[0]
-    _MPU6050_Write_Bits(0x1A,2,3,0x03); //设置DLPF带宽42赫兹
-    _MPU6050_Write_Bits(0x1B,4,2,0x03); //陀螺灵敏度设置为+ / - 2000 deg/sec
-    _MPU6050_Write_Byte(0x70,0x03); //设置DMP配置字节（功能未知）
-    _MPU6050_Write_Byte(0x71,0x00); //设置DMP配置字节（功能未知）
-    _MPU6050_Write_Bit(0x00,0,0);   //清除OTP Bank 标志
-    _MPU6050_Write_Bits(0x00,6,6,xgOffsetTC);   //设置X 陀螺抵消TCs之前的值
-    _MPU6050_Write_Bits(0x01,6,6,ygOffsetTC);   //设置Y 陀螺抵消TCs之前的值
-    _MPU6050_Write_Bits(0x02,6,6,zgOffsetTC);   //设置Z 陀螺抵消TCs之前的值
-    _MPU6050_DMP_Updates(0);    //最后更新1/7(函数未知)dmpUpdates数组第一行
-    _MPU6050_DMP_Updates(5);    //最后更新2/7(函数未知)dmpUpdates数组第二行
-    _MPU6050_Write_Bit(0x6A,2,1);   //复位 FIFO
-    fifoCount = _MPU6050_Get_FIFO_Count();   //读取 FIFO 计数
+    if((_loadfirmware()) == 0 ) return 0;    //加载 DMP代码到内存
+    if((_loadcfgupd()) == 0 ) return 0;  //配制DMP
+    _MPU6050_Write_Bits(0x6B,2,3,0x03);   //设置时钟脉冲源Z陀螺
+    _MPU6050_Write_Byte(0x38,0x12);    //设置DMP和FIFO_OFLOW启用中断
+    _MPU6050_Write_Byte(0x19,4);   //设置采样率为200 hz  (1khz / (1 + 4) = 200 Hz)
+    _MPU6050_Write_Bits(0x1A,5,3,0x1);    //设置外部帧同步TEMP_OUT_L[0]
+    _MPU6050_Write_Bits(0x1A,2,3,0x03);   //设置DLPF带宽42赫兹
+    _MPU6050_Write_Bits(0x1B,4,2,0x03);   //陀螺灵敏度设置为+ / - 2000 deg/sec，量程初始化在下面的init函数里做了
+    _MPU6050_Write_Byte(0x70,0x03);    //设置DMP配置字节（功能未知）
+    _MPU6050_Write_Byte(0x71,0x00);    //设置DMP配置字节（功能未知）
+    _MPU6050_Write_Bit(0x00,0,0); //清除OTP Bank 标志
+    _MPU6050_Write_Bits(0x00,6,6,xgOffsetTC); //设置X 陀螺抵消TCs之前的值
+    _MPU6050_Write_Bits(0x01,6,6,ygOffsetTC); //设置Y 陀螺抵消TCs之前的值
+    _MPU6050_Write_Bits(0x02,6,6,zgOffsetTC); //设置Z 陀螺抵消TCs之前的值
+    _xdmpUpdates(0); //最后更新1/7(函数未知)dmpUpdates数组第一行
+    _xdmpUpdates(5); //最后更新2/7(函数未知)dmpUpdates数组第二行
+    _MPU6050_Write_Bit(0x6A,2,1); //复位 FIFO
+    fifoCount = _getFIFOCount(); //读取 FIFO 计数
     //readdmp(fifoCount,fifoBuffer);    //读取FIFO里的数据
-    _MPU6050_Write_Bit(0x6A,2,1);   //复位 FIFO
+    _MPU6050_Write_Bit(0x6A,2,1); //复位 FIFO
 
-    _MPU6050_Write_Byte(0x1F,2);    //运动检测阈值设置为2
-    _MPU6050_Write_Byte(0x21,156);  //零运动检测阈值为156
-    _MPU6050_Write_Byte(0x20,80);   //设置运动检测持续时间至80
-    _MPU6050_Write_Byte(0x22,0);    //设置零运动检测时间0
-    _MPU6050_Write_Bit(0x6A,2,1);   //复位 FIFO
-    _MPU6050_Write_Bit(0x6A,6,1);   //使能 FIFO
-    _MPU6050_Write_Bit(0x6A,7,1);   //使能 DMP
-    _MPU6050_Write_Bit(0x6A,3,1);   //复位 DMP
-    _MPU6050_DMP_Updates(12);   //最后更新3/7(函数未知)dmpUpdates数组第三行
-    _MPU6050_DMP_Updates(17);   //最后更新4/7(函数未知)dmpUpdates数组第四行
-    _MPU6050_DMP_Updates(28);   //最后更新5/7(函数未知)dmpUpdates数组第五行
-    while((fifoCount = _MPU6050_Get_FIFO_Count()) < 3);  //等待 FIFO 计数 > 2
-    _MPU6050_Write_Bit(0x6A,2,1);   //复位 FIFO
+    _MPU6050_Write_Byte(0x1F,2);   //运动检测阈值设置为2
+    _MPU6050_Write_Byte(0x21,156); //零运动检测阈值为156
+    _MPU6050_Write_Byte(0x20,80);  //设置运动检测持续时间至80
+    _MPU6050_Write_Byte(0x22,0);   //设置零运动检测时间0
+    _MPU6050_Write_Bit(0x6A,2,1); //复位 FIFO
+    _MPU6050_Write_Bit(0x6A,6,1); //使能 FIFO
+    _MPU6050_Write_Bit(0x6A,7,1); //使能 DMP
+    _MPU6050_Write_Bit(0x6A,3,1); //复位 DMP
+    _xdmpUpdates(12);    //最后更新3/7(函数未知)dmpUpdates数组第三行
+    _xdmpUpdates(17);    //最后更新4/7(函数未知)dmpUpdates数组第四行
+    _xdmpUpdates(28);    //最后更新5/7(函数未知)dmpUpdates数组第五行
+    while((fifoCount = _getFIFOCount()) < 3);    //等待 FIFO 计数 > 2
+    _MPU6050_Write_Bit(0x6A,2,1); //复位 FIFO
     //readdmp(fifoCount,fifoBuffer);    //读取FIFO里的数据
-    _MPU6050_Read(0x3A,1,&mpuIntStatus);    //读取中断状态
-    _MPU6050_DMP_Updates(35);   //最后更新6/7(函数未知)dmpUpdates数组第六行
-    while((fifoCount = _MPU6050_Get_FIFO_Count()) < 3);  //等待 FIFO 计数 > 2
-    _MPU6050_Write_Bit(0x6A,2,1);   //复位 FIFO
+    _MPU6050_Read_Byte(0x3A,&mpuIntStatus);    //读取中断状态
+    _xdmpUpdates(35);    //最后更新6/7(函数未知)dmpUpdates数组第六行
+    while((fifoCount = _getFIFOCount()) < 3);    //等待 FIFO 计数 > 2
+    _MPU6050_Write_Bit(0x6A,2,1); //复位 FIFO
     //readdmp(fifoCount,fifoBuffer);    //读取FIFO里的数据
-    _MPU6050_Read(0x3A,1,&mpuIntStatus);    //读取中断状态
-    _MPU6050_DMP_Updates(40);   //最后更新7/7(函数未知)dmpUpdates数组第七行
-    _MPU6050_Write_Bit(0x6A,7,0);   //禁用DMP(稍后您打开它)
-    _MPU6050_Write_Bit(0x6A,2,1);   //复位 FIFO
-    _MPU6050_Read(0x3A,1,&mpuIntStatus);
-
-    _MPU6050_Write_Bit(0x6A,2,1);   //复位 FIFO
-    _MPU6050_Write_Bit(0x6A,7,1);   //使能 DMP
-    return;
-
+    _MPU6050_Read_Byte(0x3A,&mpuIntStatus);    //读取中断状态
+    _xdmpUpdates(40);    //最后更新7/7(函数未知)dmpUpdates数组第七行
+    _MPU6050_Write_Bit(0x6A,7,0); //禁用DMP(稍后您打开它)
+    _MPU6050_Write_Bit(0x6A,2,1); //复位 FIFO
+    _MPU6050_Read_Byte(0x3A,&mpuIntStatus);
+    //星期六 (2014/06/28)
+    return 1;
 }
 
-void _MPU6050_Data_Init() {
-    // Initialize DMP data
-    for (int i = 0; i < 3; i++) {
-        _imu_theta[i] = 0;
-        _imu_omega[i] = 0;
-        _imu_accel[i] = 0;
-
-        _imu_theta_offset[i] = 0;
-        _imu_omega_offset[i] = 0;
-        _imu_accel_offset[i] = 0;
-    }
-}
-
-void MPU6050_Init() {
-    //port configuration
+/*初始化MPU6050*/
+void MPU6050_Init(void)
+{
     _MPU6050_I2C_Struct.scl_port = I2C_SCL_I2C_PIN.pin.port;
     _MPU6050_I2C_Struct.scl_pin = I2C_SCL_I2C_PIN.pin.pinIndex;
 
@@ -474,157 +457,104 @@ void MPU6050_Init() {
 
     _MPU6050_I2C_Struct.status = EI2C_NOT_READY;
 
-    // uint8 data;
+    _MPU6050_Write_Bits (0x6B,2,3,0x01);  //电源管理
+    //writeBits (0x1B,4,2,0x00);    //设置陀螺仪量程 250/s
+    _MPU6050_Write_Bits (0x1C,4,2,0x00);  //设置加速度量程 2G
+    _MPU6050_Write_Bit (0x6B,6,1);    //电源管理MUP进入睡眠模式
 
-    // data = 0;
-    // EI2C_Mem_Write(&MPU6050_I2C_Struct, MPU6050_ADDR, PWR_MGMT_1_REG, &data, 1);
-    // //Set data rate of 1KHz by writing SMPRT_DIV register
-    // data = 0x07;
-    // EI2C_Mem_Write(&MPU6050_I2C_Struct, MPU6050_ADDR, SMPLRT_DIV_REG, &data, 1);
-    // //Writing both register with 0 to set full scale range
-    // data = 0x00;
-    // EI2C_Mem_Write(&MPU6050_I2C_Struct, MPU6050_ADDR, ACCEL_CONFIG_REG, &data, 1);
-    // EI2C_Mem_Write(&MPU6050_I2C_Struct, MPU6050_ADDR, GYRO_CONFIG_REG, &data, 1);
+    _dmpInitialize();
 
-    _MPU6050_Write_Bits(0x6B, 2, 3, 0x01); // Set clock source to Z Gyro
-    _MPU6050_Write_Bits(0x1B, 4, 2, 0x00); // Set gyro sensitivity to ±2000 deg/sec
-    _MPU6050_Write_Bits(0x1C, 4, 2, 0x00); // Set accelerometer sensitivity to ±2g
-    _MPU6050_Write_Bit(0x6B, 6, 1);
+    _MPU6050_Write_Bit(0x6A,7,1);//(&MPU6050,0x6A,7,1);   //使能DMP
+}
 
-    _DMP_Init(); // Initialize DMP
-    _MPU6050_Data_Init(); // Initialize DMP data
-
-    return;
+/*验证MPU6050连接*/
+unsigned char getDeviceID(void)
+{
+    unsigned char b=0;  //临时变量
+    _MPU6050_Read_Bits(0x75,6,6,&b);  //读取i2c固定地址，去掉最高位和最低位这两位数据，因此默认为0x68(0x34左移一位)
+    return b == 0x34;   //判断B是否等于0x34，如果等于返回1，不等于返回0
 }
 
 EI2C_Status MPU6050_Read_Accel() {
-    EI2C_Status retVal = EI2C_OK;
-    uint8 Rec_Data[6];
-    sint16 Accel_X_RAW, Accel_Y_RAW, Accel_Z_RAW;
+    uint8 dat[6];
 
-    retVal = EI2C_Mem_Read(&_MPU6050_I2C_Struct, MPU6050_ADDR, ACCEL_XOUT_H_REG, Rec_Data, 6);
-    if (retVal == EI2C_OK) {
-        Accel_X_RAW = (sint16) ((uint16) Rec_Data[0] << 8 | Rec_Data[1]);
-        Accel_Y_RAW = (sint16) ((uint16) Rec_Data[2] << 8 | Rec_Data[3]);
-        Accel_Z_RAW = (sint16) ((uint16) Rec_Data[4] << 8 | Rec_Data[5]);
+    EI2C_Status ret = _MPU6050_Read_Bytes(MPU6050_ACCEL_XOUT_H, 6, dat);
+    _imu_accel[0] = (sint16)(((uint16)dat[0] << 8 | dat[1]));
+    _imu_accel[1] = (sint16)(((uint16)dat[2] << 8 | dat[3]));
+    _imu_accel[2] = (sint16)(((uint16)dat[4] << 8 | dat[5]));
 
-        _imu_accel[0] = Accel_X_RAW * 9.81 / 16384.0 - _imu_accel_offset[0];
-        _imu_accel[1] = Accel_Y_RAW * 9.81 / 16384.0 - _imu_accel_offset[1];
-        _imu_accel[2] = Accel_Z_RAW * 9.81 / 16384.0 - _imu_accel_offset[2];
-    }
-    return retVal;
+    return ret;
 }
 
-EI2C_Status MPU6050_Read_Gyro() {
-    EI2C_Status retVal = EI2C_OK;
-    uint8 Rec_Data[6];
-    sint16 Gyro_X_RAW, Gyro_Y_RAW, Gyro_Z_RAW;
+EI2C_Status MPU6050_Read_Gyro(void) {
+    uint8 dat[6];
 
-    retVal = EI2C_Mem_Read(&_MPU6050_I2C_Struct, MPU6050_ADDR, GYRO_XOUT_H_REG, Rec_Data, 6);
-    if (retVal == EI2C_OK) {
-        Gyro_X_RAW = (sint16) ((uint16) Rec_Data[0] << 8 | Rec_Data[1]);
-        Gyro_Y_RAW = (sint16) ((uint16) Rec_Data[2] << 8 | Rec_Data[3]);
-        Gyro_Z_RAW = (sint16) ((uint16) Rec_Data[4] << 8 | Rec_Data[5]);
+    EI2C_Status ret = _MPU6050_Read_Bytes(MPU6050_GYRO_XOUT_H, 6, dat);
+    _imu_omega[0] = (sint16)(((uint16)dat[0] << 8 | dat[1]));
+    _imu_omega[1] = (sint16)(((uint16)dat[2] << 8 | dat[3]));
+    _imu_omega[2] = (sint16)(((uint16)dat[4] << 8 | dat[5]));
 
-        _imu_omega[0] = Gyro_X_RAW / 131.0 - _imu_omega_offset[0];
-        _imu_omega[1] = Gyro_Y_RAW / 131.0 - _imu_omega_offset[1];
-        _imu_omega[2] = Gyro_Z_RAW / 131.0 - _imu_omega_offset[2];
-    }
-    return retVal;
+    return ret;
 }
 
-void _MPU6050_Smooth_Theta() {
-    // if(*ang_last>145.0 && *ang_now<-145.0) *ang_state=*ang_state+1;
-	// if(*ang_last<-145.0 && *ang_now>145.0) *ang_state=*ang_state-1;
-	// return ((*ang_now)+(*ang_state)*360.0);
+double _yaw_last = 0;
+sint8 _ang_state = 0;
 
-    static double theta_last[3] = {0, 0, 0};
-    static int theta_state[3] = {0, 0, 0};
-    for (int i = 0; i < 3; i++) {
-        if (theta_last[i] > 145.0 && _imu_theta[i] < -145.0) {
-            theta_state[i]++;
-        } else if (theta_last[i] < -145.0 && _imu_theta[i] > 145.0) {
-            theta_state[i]--;
-        }
-        _imu_theta[i] += theta_state[i] * 360.0;
-        theta_last[i] = _imu_theta[i];
-    }
+double angle_with_round(double *ang_last,double *ang_now,sint8 *ang_state)//用于连续追踪角度变化，防止在函数边界的相位跳变
+{
+    if(*ang_last>145.0 && *ang_now<-145.0) *ang_state=*ang_state+1;
+    if(*ang_last<-145.0 && *ang_now>145.0) *ang_state=*ang_state-1;
+    return ((*ang_now)+(*ang_state)*360.0);
 }
 
-EI2C_Status MPU6050_Read_Theta() {
-    EI2C_Status retVal = EI2C_OK;
+EI2C_Status MPU6050_Read_Theta(void) {
+    unsigned int mpu6050_fifo_count = 0;
     uint8 zd;
-    uint32 i = _MPU6050_Get_FIFO_Count();
-    retVal = _MPU6050_Read(0x3A, 1, &zd); // Read interrupt status
-    if (retVal != EI2C_OK) {
-        return retVal;
-    }
-    if ((zd & 0x10) || i == 1024) { //
-        retVal = _MPU6050_Write_Bit(0x6A, 2, 1); // Reset FIFO
-        if (retVal != EI2C_OK) {
-            return retVal;
-        }
-    } else if (zd & 0x02) { // If data ready
-        uint8 dmpData[42];
-        while (i < 42) i = _MPU6050_Get_FIFO_Count();
-        retVal = _MPU6050_Read_DMP(dmpData); // Read DMP data
-        if (retVal != EI2C_OK) {
-            return retVal;
-        }
-        // Process quaternion data to calculate theta
-        double q0 = (double)(((sint16)dmpData[0] << 8) | dmpData[1])/ 16384.0;
-        double q1 = (double)(((sint16)dmpData[4] << 8) | dmpData[5])/ 16384.0;
-        double q2 = (double)(((sint16)dmpData[8] << 8) | dmpData[9])/ 16384.0;
-        double q3 = (double)(((sint16)dmpData[12] << 8) | dmpData[13])/ 16384.0;
+    _MPU6050_Read_Byte(0x3A,&zd);
+    _MPU6050_Write_Bit(0x6A,7,0);   //禁用DMP
+    _MPU6050_Write_Bit(0x6A,2,1);   //复位 FIFO
+    _MPU6050_Write_Bit(0x6A,7,1);   //使能DMP
 
-        // Convert quaternion to Euler angles (theta)
-        _imu_theta[0] = atan2(2.0 * (q1 * q2 + q0 * q3),
-                        1 - 2.0 * (q2 * q2 + q3 * q3)) * 57.3;
-        double sinp = 2.0 * (q0 * q2 - q3 * q1);
-        if (sinp >= 1)
-            sinp = 1;
-        else if (sinp <= -1)
-            sinp = -1;
-        _imu_theta[1] = asin(sinp) * 57.3;
-        _imu_theta[2] = atan2(2.0 * (q0 * q1 + q2 * q3),
-                        1 - 2.0 * (q1 * q1 + q2 * q2)) * 57.3;
+    while(mpu6050_fifo_count<42)
+    {
+        mpu6050_fifo_count=_getFIFOCount();//(&MPU6050);
     }
-    _MPU6050_Smooth_Theta(); // Smooth theta values
-    return retVal;
+    EI2C_Status ret = _readdmp(_dmpdatas);    //读取FIFO数据(四元数)
+
+    double Q[4];//四元数
+    Q[0] = (double)(sint16)((_dmpdatas[0] << 8 | _dmpdatas[1]))/16384;
+    Q[1] = (double)(sint16)((_dmpdatas[4] << 8 | _dmpdatas[5]))/16384;
+    Q[2] = (double)(sint16)((_dmpdatas[8] << 8 | _dmpdatas[9]))/16384;
+    Q[3] = (double)(sint16)((_dmpdatas[12] << 8 | _dmpdatas[13]))/16384;
+
+    double pitch = asin(-2 * Q[1] * Q[3] + 2 * Q[0]* Q[2]) / MPU6050_PI * 180.0;    // pitch
+    double roll  = atan2((2 * Q[2] * Q[3] + 2 * Q[0] * Q[1]),(-2 * Q[1] * Q[1] - 2 * Q[2]* Q[2] + 1)) / MPU6050_PI * 180.0; // roll
+    //获取偏航角
+    double yaw_temp=atan2(2 * (Q[1] * Q[2] + Q[0] * Q[3]),(1-2*Q[2]*Q[2]-2*Q[3]*Q[3])) / MPU6050_PI * 180.0;  //yaw
+    double yaw=angle_with_round(&_yaw_last,&yaw_temp,&_ang_state);
+    _yaw_last=yaw_temp;//保持比较的两个角都在-180~180之间
+
+    _imu_theta[0] = pitch;
+    _imu_theta[1] = roll;
+    _imu_theta[2] = yaw;
+
+    return ret;
 }
 
-void MPU6050_Get_Accel(double *accelX, double *accelY, double *accelZ) {
+void MPU6050_Get_Accel(double *accelX, double *accelY, double *accelZ){
     *accelX = _imu_accel[0];
     *accelY = _imu_accel[1];
     *accelZ = _imu_accel[2];
 }
 
-void MPU6050_Get_Omega(double *omegaX, double *omegaY, double *omegaZ) {
+void MPU6050_Get_Omega(double *omegaX, double *omegaY, double *omegaZ){
     *omegaX = _imu_omega[0];
     *omegaY = _imu_omega[1];
     *omegaZ = _imu_omega[2];
 }
 
-void MPU6050_Get_Theta(double *thetaX, double *thetaY, double *thetaZ) {
-    *thetaX = _imu_theta[0] - _imu_theta_offset[0];
-    *thetaY = _imu_theta[1] - _imu_theta_offset[1];
-    *thetaZ = _imu_theta[2] - _imu_theta_offset[2];
-}
-
-void MPU6050_Set_AccelOffset() {
-    _imu_accel_offset[0] = _imu_accel[0];
-    _imu_accel_offset[1] = _imu_accel[1];
-    _imu_accel_offset[2] = _imu_accel[2];
-}
-
-void MPU6050_Set_OmegaOffset() {
-    _imu_omega_offset[0] = _imu_omega[0];
-    _imu_omega_offset[1] = _imu_omega[1];
-    _imu_omega_offset[2] = _imu_omega[2];
-}
-
-void MPU6050_Set_ThetaOffset() {
-    _imu_theta_offset[0] = _imu_theta[0];
-    _imu_theta_offset[1] = _imu_theta[1];
-    _imu_theta_offset[2] = _imu_theta[2];
+void MPU6050_Get_Theta(double *thetaX, double *thetaY, double *thetaZ){
+    *thetaX = _imu_theta[0];
+    *thetaY = _imu_theta[1];
+    *thetaZ = _imu_theta[2];
 }

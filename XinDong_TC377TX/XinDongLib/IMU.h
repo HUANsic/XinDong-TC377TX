@@ -1,5 +1,5 @@
 /**********************************************************************************************************************
- * Author: Yikai Huang
+ * Author: Yikai Huang, Yuhui Liao
  * Description:
  * 
  * Version:
@@ -47,11 +47,5 @@ void MPU6050_Get_Accel(double *accelX, double *accelY, double *accelZ);
 void MPU6050_Get_Omega(double *omegaX, double *omegaY, double *omegaZ);
 
 void MPU6050_Get_Theta(double *thetaX, double *thetaY, double *thetaZ);
-
-void MPU6050_Set_AccelOffset(void);
-
-void MPU6050_Set_OmegaOffset(void);
-
-void MPU6050_Set_ThetaOffset(void);
 
 #endif /* XINDONGLIB_IMU_H_ */
