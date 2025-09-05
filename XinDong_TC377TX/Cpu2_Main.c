@@ -80,13 +80,20 @@ void core2_main(void) {
 		// some code to indicate that the core is not dead
 //		IO_LED_Toggle(3);
 //		Time_Delay_us(100000);
+
+	    // update the OLED screen
+	    OLED_Update();
 	}
 }
 
 /* list out all ISR for CPU2 */
 
 void Periodic_1s_ISR(void) {
-	;
+    // set the message to send
+    char message[] = "Hello,Xindong!\n";
+
+    // send the message through serial
+    Serial_Transmit((uint8 *)message, 15);
 }
 
 void Periodic_100ms_ISR(void) {
@@ -98,8 +105,6 @@ void Periodic_100ms_ISR(void) {
 
     // show number on the OLED screen
     OLED_ShowNum(0, 0, currentTime, 8, OLED_6X8);
-    // update the OLED screen
-    OLED_Update();
 }
 
 void Periodic_10ms_ISR(void) {
